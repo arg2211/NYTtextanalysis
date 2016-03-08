@@ -1,0 +1,2 @@
+# NYTtextanalysis
+Thesis project
