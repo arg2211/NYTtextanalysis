@@ -21,19 +21,18 @@ Done
 
 """
 
+NYTtest2 = open("NYTtest2.txt", 'r')
 
-
-def split_ln(fname):
-    print 'Processing\t',fname
+def split_ln(NYTtest2):
+    print 'Processing\t',NYTtest2
     #Imort the two required modules
     import re
     import csv
-    outname=fname.replace(fname.split('.')[-1],'csv') #replace the extension with "csv"
+    outname=NYTtest2.replace(NYTtest2.split('.')[-1],'csv') #replace the extension with "csv"
     #setup the output file. Maybe give the option for seperate text files, if desired.
     outfile=open(outname,'wb')
     writer = csv.writer(outfile)
-
-    lnraw=open(fname).read() #read the file
+    lnraw=open(NYTtest2).read() #read the file
 
 
     workfile=re.sub('                Copyright .*?\\r\\n','ENDOFILE',lnraw) #silly hack to find the end of the documents
@@ -91,6 +90,6 @@ if __name__ == "__main__":
     except:
         print 'Only one argument please. But you can use things like *.txt'
     else:
-        for fname in flist:
-            split_ln(fname)
+        for NYTtest2 in flist:
+            split_ln(NYTtest2)
         print 'Done'

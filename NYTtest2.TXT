@@ -1,5 +1,5 @@
 ﻿
-                               2 of 156 DOCUMENTS
+                               6 of 177 DOCUMENTS
 
 
                                The New York Times
@@ -109,20 +109,27 @@ URL:
 http://www.nytimes.com/2016/03/07/business/media/obama-pays-tribute-to-charlie-b
 rown-snoopy-and-the-peanuts-gang.html
 
-LOAD-DATE: March 8, 2016
-
-LANGUAGE: ENGLISH
-
 GRAPHIC: PHOTO: The 25th volume of ''The Complete Peanuts,'' a series published
 over 12 years. (PHOTOGRAPH BY FANTAGRAPHICS BOOKS)
 
+LANGUAGE: ENGLISH
+
 PUBLICATION-TYPE: Newspaper
+
+SUBJECT: US PRESIDENTS (90%); BOOK REVIEWS (77%); VISUAL ARTISTS (63%);
+COLORECTAL CANCER (50%)
+
+PERSON: BARACK OBAMA (91%)
+
+COUNTRY: UNITED STATES (93%)
+
+LOAD-DATE: March 8, 2016
 
 
                    Copyright 2016 The New York Times Company
 
 
-                               8 of 156 DOCUMENTS
+                              12 of 177 DOCUMENTS
 
 
                                The New York Times
@@ -227,18 +234,36 @@ URL:
 http://www.nytimes.com/2016/03/07/theater/review-carnegie-halls-west-side-story-
 at-the-knockdown-center.html
 
-LOAD-DATE: March 7, 2016
-
-LANGUAGE: ENGLISH
-
 GRAPHIC: PHOTO: West Side Story: A scene from the production presented by
 Carnegie Hall and the Weill Music Institute at the Knockdown Center in Queens.
 This show mixed professional actors with high-school-aged apprentices.
 (PHOTOGRAPH BY SARA KRULWICH/THE NEW YORK TIMES)
 
+LANGUAGE: ENGLISH
+
 DOCUMENT-TYPE: Review
 
 PUBLICATION-TYPE: Newspaper
+
+SUBJECT: MUSIC (90%); MUSIC GROUPS & ARTISTS (90%); ACTORS & ACTRESSES (89%);
+HIGH SCHOOLS (89%); CLASSICAL MUSIC (77%); MUSICAL THEATER (77%); SINGERS &
+MUSICIANS (77%); MUSIC INDUSTRY (77%); ARTISTS & PERFORMERS (76%); FILM (75%);
+MUSIC COMPOSITION (71%); THEATER (57%)
+
+COMPANY: CARNEGIE HALL CORP (58%)
+
+ORGANIZATION: NEW YORK JETS (84%)
+
+INDUSTRY: SIC7922 THEATRICAL PRODUCERS (EXCEPT MOTION PICTURE) & MISCELLANEOUS
+THEATRICAL SERVICES (58%)
+
+CITY: NEW YORK, NY, USA (79%)
+
+STATE: NEW YORK, USA (79%)
+
+COUNTRY: UNITED STATES (79%)
+
+LOAD-DATE: March 7, 2016
 
 
                    Copyright 2016 The New York Times Company
