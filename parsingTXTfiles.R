@@ -29,4 +29,4 @@ inspect(nytcorpus) #see what corpus looks like
 
 nytcorpus <- tm_map(nytcorpus, stripWhitespace) #gets rid of extra white space
 nytcorpus <- tm_map(nytcorpus, tolower) #makes all letters lowercase
-
+nytcorpus
