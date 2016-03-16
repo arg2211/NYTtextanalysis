@@ -23,3 +23,10 @@ class(plain) #what kind of value
 nytcorpus <- VCorpus(vs)
 inspect(nytcorpus) #this tells us that nytcorpus has 269 "documents" bc each line is treated as a document
 
+# clean corpus
+stopwords("english") #view stopwords
+inspect(nytcorpus) #see what corpus looks like
+
+nytcorpus <- tm_map(nytcorpus, stripWhitespace) #gets rid of extra white space
+nytcorpus <- tm_map(nytcorpus, tolower) #makes all letters lowercase
+

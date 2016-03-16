@@ -1,44 +1,47 @@
 #!/usr/bin/env python
-# encoding: utf-8
+#encoding: utf-8
 """
 split_ln.py
 
 Created by Neal Caren on 2012-05-14.
 neal.caren@unc.edu
 
+Edited by Amanda Gates on 2016-03-16.
+NOTE: removed all \r before \n in code because of Windows vs OSX differences in Python.
+
 Takes a downloaded plain text LexisNexis file and converts it into a CSV file.
 
-
-sample usage:
+sample usage below (type $... into command line and should return "Processing <file.txt>", then "Done"):
+-----for multiple .txt files-----
 $ python split_ln.py T*.txt
 Processing The_New_York_Times_TP_2012_1.txt
 Processing The_New_York_Times_TP_2012_2.txt
 Done
-
+-----for a single .txt file-----
 $ python split_ln.py ap_tp_201201.txt
 Processing ap_tp_201201.txt
 Done
 
 """
 
-NYTtest2 = open("NYTtest2.txt", 'r')
 
-def split_ln(NYTtest2):
-    print 'Processing\t',NYTtest2
+def split_ln(fname):
+    print 'Processing\t',fname
     #Imort the two required modules
     import re
     import csv
-    outname=NYTtest2.replace(NYTtest2.split('.')[-1],'csv') #replace the extension with "csv"
+    outname=fname.replace(fname.split('.')[-1],'csv') #replace the extension with "csv"
     #setup the output file. Maybe give the option for seperate text files, if desired.
     outfile=open(outname,'wb')
     writer = csv.writer(outfile)
-    lnraw=open(NYTtest2).read() #read the file
+    lnraw=open(fname).read() #read the file
 
 
-    workfile=re.sub('                Copyright .*?\\r\\n','ENDOFILE',lnraw) #silly hack to find the end of the documents
-    workfile=workfile.replace('\xef\xbb\xbf\r\n','') #clean up crud at the beginning of the file
+    workfile=re.sub('                Copyright .*?\n','ENDOFILE',lnraw) #silly hack to find the end of the documents
+    workfile=workfile.replace('\xef\xbb\xbf\n','') #clean up crud at the beginning of the file
+    #workfile=workfile.replace('\0xEF\0xBB\0xBF\n','') #clean up crud at the beginning of the file
     workfile=workfile.split('ENDOFILE') #split the file into a list of documents.
-    workfile=[f for f in workfile if len(f.split('\r\n\r\n'))>2] #remove an blank rows
+    workfile=[f for f in workfile if len(f.split('\n\n'))>2] #remove an blank rows
 
     #Figure out what special meta data is being reported
     meta_list=list(set(re.findall('\\n([A-Z][A-Z-]*?):',lnraw))) #Find them all
@@ -52,7 +55,7 @@ def split_ln(NYTtest2):
     for f in workfile:
 
         #Split into lines, and clean up the hard returns at the end of each line. Also removes blank lines that the occasional copyright lines
-        filessplit=[row.replace('\r\n',' ') for row in f.split('\r\n\r\n') if len(row)>0 and 'All Rights Reserved' not in row]
+        filessplit=[row.replace('\n',' ') for row in f.split('\n\n') if len(row)>0 and 'All Rights Reserved' not in row]
         #The id number (from that search) is the first text in the first item of the list
         docid=filessplit[0].lstrip().split(' ')[0]
         dateedition=filessplit[2].lstrip()
@@ -90,6 +93,6 @@ if __name__ == "__main__":
     except:
         print 'Only one argument please. But you can use things like *.txt'
     else:
-        for NYTtest2 in flist:
-            split_ln(NYTtest2)
+        for fname in flist:
+            split_ln(fname)
         print 'Done'
