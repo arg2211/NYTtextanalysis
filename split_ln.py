@@ -37,7 +37,7 @@ def split_ln(fname):
     lnraw=open(fname).read() #read the file
 
 
-    workfile=re.sub('                Copyright .*?\n','ENDOFILE',lnraw) #silly hack to find the end of the documents
+    workfile=re.sub('Copyright .*?\n','ENDOFILE',lnraw) #silly hack to find the end of the documents
     workfile=workfile.replace('\xef\xbb\xbf\n','') #clean up crud at the beginning of the file
     #workfile=workfile.replace('\0xEF\0xBB\0xBF\n','') #clean up crud at the beginning of the file
     workfile=workfile.split('ENDOFILE') #split the file into a list of documents.

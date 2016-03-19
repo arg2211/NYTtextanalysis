@@ -1,6 +1,6 @@
 # setup
 getwd()
-setwd("~/GitHub/NYTtextanalysis/data")
+setwd("~/GitHub/NYTtextanalysis/data/random2015dates")
 
 options(stringsAsFactors = FALSE)
 
@@ -8,18 +8,51 @@ library(tm)
 
 # load .csv file containing text and metadata
 # (created with my edited version of Neal Caren's Python script split_ln.py)
-nyt <- read.csv('nyt3.7b.csv', header = TRUE, stringsAsFactors = FALSE)
+# nyt <- read.csv('<filename>.csv', header = TRUE, stringsAsFactors = FALSE)
+#NEED TO FIND A MORE SUCCINCT WAY TO DO THIS
+nyt01 <- read.csv('nyt01-02-15.csv', header = TRUE, stringsAsFactors = FALSE)
+nyt02 <- read.csv('nyt02-02-15.csv', header = TRUE, stringsAsFactors = FALSE)
+nyt03 <- read.csv('nyt03-20-15.csv', header = TRUE, stringsAsFactors = FALSE)
+nyt04 <- read.csv('nyt04-11-15.csv', header = TRUE, stringsAsFactors = FALSE)
+nyt05 <- read.csv('nyt05-12-15.csv', header = TRUE, stringsAsFactors = FALSE)
+nyt06 <- read.csv('nyt06-06-15.csv', header = TRUE, stringsAsFactors = FALSE)
+nyt07 <- read.csv('nyt07-26-15.csv', header = TRUE, stringsAsFactors = FALSE)
+nyt08 <- read.csv('nyt08-30-15.csv', header = TRUE, stringsAsFactors = FALSE)
+nyt09 <- read.csv('nyt09-18-15.csv', header = TRUE, stringsAsFactors = FALSE)
+nyt10 <- read.csv('nyt10-17-15.csv', header = TRUE, stringsAsFactors = FALSE)
+nyt11 <- read.csv('nyt11-10-15.csv', header = TRUE, stringsAsFactors = FALSE)
+nyt12 <- read.csv('nyt12-10-15.csv', header = TRUE, stringsAsFactors = FALSE)
+
+colnames(nyt08)
+
+#keep only the columns I want (also makes it easier to merge data frames)
+df01 <- subset(nyt01, select = c(SEARCH_ROW, PUBLICATION, SECTION, DATE, TITLE, BYLINE, COUNTRY, STATE, CITY, PERSON, SUBJECT, LENGTH, TEXT))
+df02 <- subset(nyt02, select = c(SEARCH_ROW, PUBLICATION, SECTION, DATE, TITLE, BYLINE, COUNTRY, STATE, CITY, PERSON, SUBJECT, LENGTH, TEXT))
+df03 <- subset(nyt03, select = c(SEARCH_ROW, PUBLICATION, SECTION, DATE, TITLE, BYLINE, COUNTRY, STATE, CITY, PERSON, SUBJECT, LENGTH, TEXT))
+df04 <- subset(nyt04, select = c(SEARCH_ROW, PUBLICATION, SECTION, DATE, TITLE, BYLINE, COUNTRY, STATE, CITY, PERSON, SUBJECT, LENGTH, TEXT))
+df05 <- subset(nyt05, select = c(SEARCH_ROW, PUBLICATION, SECTION, DATE, TITLE, BYLINE, COUNTRY, STATE, CITY, PERSON, SUBJECT, LENGTH, TEXT))
+df06 <- subset(nyt06, select = c(SEARCH_ROW, PUBLICATION, SECTION, DATE, TITLE, BYLINE, COUNTRY, STATE, CITY, PERSON, SUBJECT, LENGTH, TEXT))
+df07 <- subset(nyt07, select = c(SEARCH_ROW, PUBLICATION, SECTION, DATE, TITLE, BYLINE, COUNTRY, STATE, CITY, PERSON, SUBJECT, LENGTH, TEXT))
+df08 <- subset(nyt08, select = c(SEARCH_ROW, PUBLICATION, SECTION, DATE, TITLE, BYLINE, COUNTRY, STATE, CITY, PERSON, SUBJECT, LENGTH, TEXT))
+df09 <- subset(nyt09, select = c(SEARCH_ROW, PUBLICATION, SECTION, DATE, TITLE, BYLINE, COUNTRY, STATE, CITY, PERSON, SUBJECT, LENGTH, TEXT))
+df10 <- subset(nyt10, select = c(SEARCH_ROW, PUBLICATION, SECTION, DATE, TITLE, BYLINE, COUNTRY, STATE, CITY, PERSON, SUBJECT, LENGTH, TEXT))
+df11 <- subset(nyt11, select = c(SEARCH_ROW, PUBLICATION, SECTION, DATE, TITLE, BYLINE, COUNTRY, STATE, CITY, PERSON, SUBJECT, LENGTH, TEXT))
+df12 <- subset(nyt12, select = c(SEARCH_ROW, PUBLICATION, SECTION, DATE, TITLE, BYLINE, COUNTRY, STATE, CITY, PERSON, SUBJECT, LENGTH, TEXT))
+
+nyt.merged <- rbind(df01, df02, df03, df04, df05, df06, df07, df08, df09, df10, df11, df12)
+#nyt.merged <- merge(nyt01, nyt02, nyt03, nyt04, nyt05, nyt06, nyt07, nyt08, nyt09, nyt10, nyt11, nyt12)
+#?merge()
 
 # create a corpus from text and metadata
 getReaders()
-nytcorpus <- VCorpus(DataframeSource(nyt))
+nytcorpus <- VCorpus(DataframeSource(nyt.merged))
 class(nytcorpus) #just making sure it's a corpus
 inspect(nytcorpus) #gives info about all "documents" in corpus
 inspect(nytcorpus[2]) #gives info about only the 2nd "document" in corpus
 summary(nytcorpus)
 
 # create a corpus with only text in it
-onlytext <- paste(nyt$TEXT, collapse = " ", stringsAsFactors = FALSE)
+onlytext <- paste(nyt.merged$TEXT, collapse = " ", stringsAsFactors = FALSE)
 class(onlytext)
 summary(onlytext)
 onlytextvs <- VectorSource(onlytext)
