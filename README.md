@@ -14,10 +14,12 @@ type *.txt > <filename>.txt
 ```
   * another option - scrape text using NYT API
     + good article/tutorial: http://brooksandrew.github.io/simpleblog/articles/new-york-times-api-to-mongodb/#accessing-nyt-api
+
 2. Clean Data
   * found Neal Caren's code here: http://nealcaren.web.unc.edu/cleaning-up-lexisnexis-files/
   * converts plain text files to csv files with text and metadata, where each row is one article
     + modified code slightly to create my own split_ln.py that works with my computer
+
 3. Preprocess Text Data
   * first create corpus of words
   * then clean corpus by making all letter lowercase, removing extra white space, etc.
