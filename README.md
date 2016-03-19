@@ -6,7 +6,12 @@ This is my thesis project! I want to conduct a text analysis of gender related t
   * chosen corpus = articles published in The New York Times in the last year
   * articles for newspapers, magazines, etc. available through LexisNexis Academic (access through school)
     + link here, need to sign in: http://www.columbia.edu/cgi-bin/cul/resolve?AND3603
+    + randomly select 1 day from each month in 2015 and download all NYT times from those 12 days
     + download articles in .txt format & select "documents with indexing"
+    + merge all .txt files into one .txt file using command line:
+```{r}
+type *.txt > <filename>.txt
+```
   * another option - scrape text using NYT API
     + good article/tutorial: http://brooksandrew.github.io/simpleblog/articles/new-york-times-api-to-mongodb/#accessing-nyt-api
 2. Clean Data
