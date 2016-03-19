@@ -14,4 +14,11 @@ This is my thesis project! I want to conduct a text analysis of gender related t
   * converts plain text files to csv files with text and metadata, where each row is one article
     + modified code slightly to create my own split_ln.py that works with my computer
 3. Preprocess Text Data
-  * 
+  * first create corpus of words
+  * then clean corpus by making all letter lowercase, removing extra white space, etc.
+  * make a document term matrix (dtm)
+  * helpful beginner tutorials, articles, videos, etc. include:
+    + A Gentle Introduction to Text Mining Using R https://eight2late.wordpress.com/2015/05/27/a-gentle-introduction-to-text-mining-using-r/
+    + Basic Text Mining in R https://rstudio-pubs-static.s3.amazonaws.com/31867_8236987cf0a8444e962ccd2aec46d9c3.html
+    + tm package documentation https://cran.r-project.org/web/packages/tm/index.html
+    + Text Mining in R Tutorial: Term Frequency & Word Clouds https://www.youtube.com/watch?v=lRTerj8fdY0
