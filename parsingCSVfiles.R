@@ -27,8 +27,7 @@ onlytextcorpus <- Corpus(onlytextvs)
 class(onlytextcorpus)
 
 # clean onlytextcorpus
-toSpace <- content_transformer(function(x, pattern) {return (gsub(pattern, " ", x))})
-
+toSpace <- content_transformer(function(x, pattern) {return (gsub(pattern, " ", x))}) #creates function "toSpace" using gsub that replaces characters with a space
 
 getTransformations()
 otc <- tm_map(onlytextcorpus, content_transformer(tolower)) #need to use content_transformer with tolower because of bug in newer version of tm package
