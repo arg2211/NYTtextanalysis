@@ -76,15 +76,32 @@ class(otc)
 # make a document term matrix (dtm)
 dtm <- DocumentTermMatrix(otc)
 dtm2 <- as.matrix(dtm)
-dtm
+dtm # gives number of terms in documents 
 
 # find most frequent terms
 freq <- colSums(dtm2)
 str(freq)
 freq <- sort(freq, decreasing = TRUE)
 head(freq)
+head(table(freq), 30) #shows you a table of frequencies (how many words [bottom row] appear this frequently [top row])
 
 # create a wordcloud
 library(wordcloud)
+library(RColorBrewer)
 words <- names(freq)
 wordcloud(words[1:100], freq[1:100])
+wordcloud(names(freq), freq, max.words=100) #creates word cloud of words, by frequency (larger text = more), with max of 100 words displayed
+wordcloud(names(freq), freq, min.freq=1000, colors=brewer.pal(8, "Dark2")) #creates word cloud of words, by frequency (larger text = more), with only words that occur 1000+ times
+
+# descriptive stats on articles
+art <- c(141, 145, 255, 167, 204, 171, 354, 341, 216, 169, 189, 230, 215)
+mean(art)
+hist(art,
+     breaks = 11,
+     freq = TRUE, probability = FALSE,
+     labels = c("Jan-2", "Feb-2", "Mar-20", "Apr-11", "May-12", "Jun-6", "Jul-26", "Aug-30", "Sept-18", "Oct-17", "Nov-10", "Dec-10", "Avg"),
+     col = "green", border = "white",
+     main = "Number of NYT Articles Published per Day",
+     xlab = "Randomly-Selected Days",
+     ylab = "Number of Articles")
+     #ylim = c(0, 400)
