@@ -69,7 +69,7 @@ otc <- tm_map(otc, toSpace, "-")
 otc <- tm_map(otc, toSpace, ":")
 otc <- tm_map(otc, stripWhitespace)
 otc <- tm_map(otc, removeWords, stopwords("english"))
-#otc <- tm_map(otc, removeWords, c("x")) #insert words that you want to remove from corpus where "x" is
+otc <- tm_map(otc, removeWords, c("url")) #insert words that you want to remove from corpus where "x" is
 inspect(otc)
 class(otc)
 
@@ -80,9 +80,12 @@ dtm # gives number of terms in documents
 
 # find most frequent terms
 freq <- colSums(dtm2)
-str(freq)
+count <- rowSums(dtm2)
+count
+#str(freq)
 freq <- sort(freq, decreasing = TRUE)
-head(freq)
+head(freq, 30)
+tail(freq, 10)
 head(table(freq), 30) #shows you a table of frequencies (how many words [bottom row] appear this frequently [top row])
 
 # create a wordcloud
@@ -91,9 +94,10 @@ library(RColorBrewer)
 words <- names(freq)
 wordcloud(words[1:100], freq[1:100])
 wordcloud(names(freq), freq, max.words=100) #creates word cloud of words, by frequency (larger text = more), with max of 100 words displayed
-wordcloud(names(freq), freq, min.freq=1000, colors=brewer.pal(8, "Dark2")) #creates word cloud of words, by frequency (larger text = more), with only words that occur 1000+ times
+wordcloud(names(freq), freq, min.freq=600, colors=brewer.pal(8, "Dark2")) #creates word cloud of words, by frequency (larger text = more), with only words that occur 1000+ times
 
 # descriptive stats on articles
+# NEED TO FIX
 art <- c(141, 145, 255, 167, 204, 171, 354, 341, 216, 169, 189, 230, 215)
 mean(art)
 hist(art,
