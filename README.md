@@ -22,7 +22,13 @@ type *.txt > <filename>.txt
 
 3. Preprocess Text Data
   * first create corpus of words
-  * then clean corpus by making all letter lowercase, removing extra white space, etc.
+  * then clean corpus by:
+    + making all letter lowercase
+    + removing extra white space
+    + removing characters like : and _
+    + stemming words (reduce to root)
+    + removing stopwords (gets rid of words like "the", "and", "have")
+    [NOTE: probably will not want to do this for gender-related words]
   * make a document term matrix (dtm)
   * helpful beginner tutorials, articles, videos, etc. include:
     + A Gentle Introduction to Text Mining Using R https://eight2late.wordpress.com/2015/05/27/a-gentle-introduction-to-text-mining-using-r/
