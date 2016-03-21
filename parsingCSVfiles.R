@@ -64,10 +64,11 @@ toSpace <- content_transformer(function(x, pattern) {return (gsub(pattern, " ", 
 
 getTransformations()
 otc <- tm_map(onlytextcorpus, content_transformer(tolower)) #need to use content_transformer with tolower because of bug in newer version of tm package
+otc <- tm_map(otc, stripWhitespace)
+
 otc <- tm_map(otc, removePunctuation)
 otc <- tm_map(otc, toSpace, "-")
 otc <- tm_map(otc, toSpace, ":")
-otc <- tm_map(otc, stripWhitespace)
 otc <- tm_map(otc, removeWords, stopwords("english"))
 otc <- tm_map(otc, removeWords, c("url")) #insert words that you want to remove from corpus where "x" is
 otcstem <- tm_map(otc, stemDocument) #uses tm package stemming
@@ -148,3 +149,46 @@ p <- ggplot(subset(wf, freq>500), aes(word, freqstem))
 p <- p + geom_bar(stat="identity")   
 p <- p + theme(axis.text.x=element_text(angle=45, hjust=1))   
 p  #error, fix later
+
+#------------# trying to split corpus by sentences #---------------#
+# Load Packages
+require(tm)
+require(NLP)
+require(openNLP)
+require(qdap)
+
+# set up function to convert text to sentences
+convert_text_to_sentences <- function(text, lang = "en") {
+  # Function to compute sentence annotations using the Apache OpenNLP Maxent sentence detector employing the default model for language 'en'. 
+  #sentence_token_annotator <- Maxent_Sent_Token_Annotator(language = lang) #from original
+  sentence_token_annotator <- sent_detect_nlp(language = lang)
+  
+  # Convert text to class String from package NLP
+  text <- as.String(text)
+  
+  # Sentence boundaries in text
+  sentence.boundaries <- annotate(text, sentence_token_annotator)
+  
+  # Extract sentences
+  sentences <- text[sentence.boundaries]
+  
+  # return sentences
+  return(sentences)
+}
+
+# reshape corpus hack *NOTE* will lose metadata unless recode
+reshape_corpus <- function(onlytextcorpus, FUN, ...) {
+  # Extract the text from each document in the corpus and put into a list
+  text <- lapply(onlytextcorpus, content_transformer)
+  
+  # Basically convert the text
+  docs <- lapply(text, FUN, ...)
+  docs <- as.vector(unlist(docs))
+  
+  # Create a new corpus structure and return it
+  new.corpus <- Corpus(VectorSource(docs))
+  return(new.corpus)
+}
+
+# then use function just created to reshape the corpus into sentences
+reshape_corpus(onlytextcorpus, convert_text_to_sentences)
