@@ -157,11 +157,12 @@ require(NLP)
 require(openNLP)
 require(qdap)
 
+install.packages('rJava')
+
 # set up function to convert text to sentences
 convert_text_to_sentences <- function(text, lang = "en") {
   # Function to compute sentence annotations using the Apache OpenNLP Maxent sentence detector employing the default model for language 'en'. 
-  #sentence_token_annotator <- Maxent_Sent_Token_Annotator(language = lang) #from original
-  sentence_token_annotator <- sent_detect_nlp(language = lang)
+  sentence_token_annotator <- Maxent_Sent_Token_Annotator(language = lang) #from original
   
   # Convert text to class String from package NLP
   text <- as.String(text)
@@ -192,3 +193,11 @@ reshape_corpus <- function(onlytextcorpus, FUN, ...) {
 
 # then use function just created to reshape the corpus into sentences
 reshape_corpus(onlytextcorpus, convert_text_to_sentences)
+
+# ----------------------------------------------------------------------#
+
+# try using gender dictionary #
+
+head(NAMES, 20)
+tail(NAMES, 20)
+head(NAMES)
