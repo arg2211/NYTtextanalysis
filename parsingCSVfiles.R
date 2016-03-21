@@ -70,18 +70,23 @@ otc <- tm_map(otc, toSpace, ":")
 otc <- tm_map(otc, stripWhitespace)
 otc <- tm_map(otc, removeWords, stopwords("english"))
 otc <- tm_map(otc, removeWords, c("url")) #insert words that you want to remove from corpus where "x" is
-otcstem <- tm_map(otc, stemDocument)
-inspect(otc)
-class(otc)
+otcstem <- tm_map(otc, stemDocument) #uses tm package stemming
+
+#library(SnowballC)
+#otcstem0 <- tm_map(otc, content_transformer(wordStem), language="eng") #uses SnowballC package stemming
+#inspect(otcstem0)
+#class(otcstem0)
 
 # make a document term matrix (dtm)
-dtm <- DocumentTermMatrix(otc)
+dtm <- DocumentTermMatrix(otc) # for original corpus w/o stopwords
 dtm2 <- as.matrix(dtm)
 dtm # gives number of terms in documents 
 
-dtmstem <- DocumentTermMatrix(otcstem)
+dtmstem <- DocumentTermMatrix(otcstem) # for corpus w/o stopwords and w/ tm stemming
 dtmstem2 <- as.matrix(dtmstem)
 
+#dtmstem0 <- DocumentTermMatrix(otcstem0) # for corpus w/o stopwords and w/ SnowballC stemming
+#dtmstem02 <- as.matrix(dtmstem0)
 
 # find most frequent terms
 freq <- colSums(dtm2)
@@ -93,9 +98,22 @@ head(freq, 30)
 tail(freq, 10)
 head(table(freq), 30) #shows you a table of frequencies (how many words [bottom row] appear this frequently [top row])
 
+# for tm stemming
 freqstem <- colSums(dtmstem2)
 countstem <- rowSums(dtmstem2)
 countstem
+freqstem <- sort(freqstem, decreasing = TRUE)
+head(freqstem, 30)
+tail(freqstem, 10)
+
+# for SnowballC stemming - NOT WORKING FOR SOME REASON, LOOK INTO 
+#freqstem0 <- colSums(dtmstem02)
+#countstem0 <- rowSums(dtmstem02)
+#countstem0
+#freqstem0 <- sort(freqstem0, decreasing = TRUE)
+#head(freqstem0, 30)
+#tail(freqstem0, 10)
+
 
 # create a wordcloud
 library(wordcloud)
@@ -107,6 +125,7 @@ wordcloud(names(freq), freq, max.words=100) #creates word cloud of words, by fre
 wordcloud(names(freq), freq, min.freq=600, colors=brewer.pal(8, "Dark2")) #creates word cloud of words, by frequency (larger text = more), with only words that occur 1000+ times
 
 wordcloud(names(freqstem), freqstem, min.freq=600, colors=brewer.pal(8, "Dark2")) #creates word cloud of words, by frequency (larger text = more), with only words that occur 1000+ times
+
 
 # descriptive stats on articles
 # NEED TO FIX
@@ -121,3 +140,11 @@ hist(art,
      xlab = "Randomly-Selected Days",
      ylab = "Number of Articles")
      #ylim = c(0, 400)
+
+# try using ggplot for graphing
+library(ggplot2)   
+wf <- data.frame(word=names(freqstem), freq=freqstem)   
+p <- ggplot(subset(wf, freq>500), aes(word, freqstem))    
+p <- p + geom_bar(stat="identity")   
+p <- p + theme(axis.text.x=element_text(angle=45, hjust=1))   
+p  #error, fix later
