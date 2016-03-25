@@ -43,15 +43,22 @@ df12 <- subset(nyt12, select = c(SEARCH_ROW, PUBLICATION, SECTION, DATE, TITLE, 
 
 nyt.merged <- rbind(df01, df02, df03, df04, df05, df06, df07, df08, df09, df10, df11, df12)
 save(nyt.merged, file = "nyt.merged.rda")
+write.csv(nyt.merged, file = "nyt.merged.csv")
 
 # ------------------------------ # load cleaned data file # ---------------------------------- #
 
-load("nyt.merged.rda")
+load("nyt.merged.rda")  
+# OR
+nyt.q <- read.csv("nyt.merged.csv")
 
 # ------------------------------ # split by sentences before preprocessing # --------------------------------- #
 
+install.packages("quanteda")
+require(quanteda)
 
+textfile(read.csv("nyt.merged.csv"))
 
+qcorpus <- corpus(nytcorpus)
 
 # --------------------- # preprocessing & creating a corpus # ---------------------- #
 
