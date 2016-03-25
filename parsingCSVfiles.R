@@ -4,6 +4,8 @@ setwd("~/GitHub/NYTtextanalysis/data/random2015dates")
 
 options(stringsAsFactors = FALSE)
 
+# ----------------------- # clean .csv files and combine into one data frame # --------------------------- #
+
 library(tm)
 
 # load .csv file containing text and metadata
@@ -40,8 +42,18 @@ df11 <- subset(nyt11, select = c(SEARCH_ROW, PUBLICATION, SECTION, DATE, TITLE, 
 df12 <- subset(nyt12, select = c(SEARCH_ROW, PUBLICATION, SECTION, DATE, TITLE, BYLINE, COUNTRY, STATE, CITY, PERSON, SUBJECT, LENGTH, TEXT))
 
 nyt.merged <- rbind(df01, df02, df03, df04, df05, df06, df07, df08, df09, df10, df11, df12)
-#nyt.merged <- merge(nyt01, nyt02, nyt03, nyt04, nyt05, nyt06, nyt07, nyt08, nyt09, nyt10, nyt11, nyt12)
-#?merge()
+save(nyt.merged, file = "nyt.merged.rda")
+
+# ------------------------------ # load cleaned data file # ---------------------------------- #
+
+load("nyt.merged.rda")
+
+# ------------------------------ # split by sentences before preprocessing # --------------------------------- #
+
+
+
+
+# --------------------- # preprocessing & creating a corpus # ---------------------- #
 
 # create a corpus from text and metadata
 getReaders()
@@ -161,7 +173,8 @@ install.packages('rJava')
 
 # set up function to convert text to sentences
 convert_text_to_sentences <- function(text, lang = "en") {
-  # Function to compute sentence annotations using the Apache OpenNLP Maxent sentence detector employing the default model for language 'en'. 
+  # Function to compute sentence annotations using the Apache OpenNLP Maxent sentence detector 
+  # employing the default model for language 'en'. 
   sentence_token_annotator <- Maxent_Sent_Token_Annotator(language = lang) #from original
   
   # Convert text to class String from package NLP
@@ -191,8 +204,8 @@ reshape_corpus <- function(onlytextcorpus, FUN, ...) {
   return(new.corpus)
 }
 
-# then use function just created to reshape the corpus into sentences
-reshape_corpus(onlytextcorpus, convert_text_to_sentences)
+# then use function just created to reshape the corpus into sentences (use onlytextcorpus which has not been preprocessed yet)
+onlytextcorpus2 <- reshape_corpus(onlytextcorpus, convert_text_to_sentences)
 
 # ----------------------------------------------------------------------#
 
