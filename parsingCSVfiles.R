@@ -49,16 +49,37 @@ write.csv(nyt.merged, file = "nyt.merged.csv")
 
 load("nyt.merged.rda")  
 # OR
-nyt.q <- read.csv("nyt.merged.csv")
+nyt.merged <- read.csv("nyt.merged.csv")
 
 # ------------------------------ # split by sentences before preprocessing # --------------------------------- #
 
 install.packages("quanteda")
 require(quanteda)
 
-textfile(read.csv("nyt.merged.csv"))
+class(inaugTexts) #inaugTexts is used in example in documentation
 
-qcorpus <- corpus(nytcorpus)
+# f uses VCorpus object
+f <- as.character(nytcorpus) #takes VCorpus object made with tm package and treats it as a character object, f
+str(f) #displays internal STRucture of an R object (similar to summary())
+myCorpus <- corpus(f)  # build the corpus using quanteda's corpus() function
+summary(f, n = 5) #look at 5 docs in f
+
+sentences <- tokenize(f, what = "sentence") #split f corpus by sentences
+sentences.n <- as.data.frame(unlist(sentences)) #
+
+# uses onlytext, which is a character object created before from just TEXT column in nyt.merged df
+class(onlytext)
+sentences2 <- tokenize(onlytext, what = "sentence")
+sentences.n2 <- as.data.frame(unlist(sentences2))
+
+# DO NOT DO THIS - DO NOT make corpus lowercase before splitting by sentences... it doesn't work!
+f3 <- as.character(otc) #uses only TEXT corpus (created from TEXT column) that has been changed to all lowercase & stripWhitespace
+str(f3)
+myCorpus3 <- corpus(f3)  # build the corpus
+summary(f3)
+sentences3 <- tokenize(f3, what = "sentence")
+sentences.n3 <- as.data.frame(unlist(sentences3))
+
 
 # --------------------- # preprocessing & creating a corpus # ---------------------- #
 
