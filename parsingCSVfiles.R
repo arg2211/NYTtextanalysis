@@ -51,36 +51,6 @@ load("nyt.merged.rda")
 # OR
 nyt.merged <- read.csv("nyt.merged.csv")
 
-# ------------------------------ # split by sentences before preprocessing # --------------------------------- #
-
-install.packages("quanteda")
-require(quanteda)
-
-class(inaugTexts) #inaugTexts is used in example in documentation
-
-# f uses VCorpus object
-f <- as.character(nytcorpus) #takes VCorpus object made with tm package and treats it as a character object, f
-str(f) #displays internal STRucture of an R object (similar to summary())
-myCorpus <- corpus(f)  # build the corpus using quanteda's corpus() function
-summary(f, n = 5) #look at 5 docs in f
-
-sentences <- tokenize(f, what = "sentence") #split f corpus by sentences
-sentences.n <- as.data.frame(unlist(sentences)) #
-
-# uses onlytext, which is a character object created before from just TEXT column in nyt.merged df
-class(onlytext)
-sentences2 <- tokenize(onlytext, what = "sentence")
-sentences.n2 <- as.data.frame(unlist(sentences2))
-
-# DO NOT DO THIS - DO NOT make corpus lowercase before splitting by sentences... it doesn't work!
-f3 <- as.character(otc) #uses only TEXT corpus (created from TEXT column) that has been changed to all lowercase & stripWhitespace
-str(f3)
-myCorpus3 <- corpus(f3)  # build the corpus
-summary(f3)
-sentences3 <- tokenize(f3, what = "sentence")
-sentences.n3 <- as.data.frame(unlist(sentences3))
-
-
 # --------------------- # preprocessing & creating a corpus # ---------------------- #
 
 # create a corpus from text and metadata
@@ -106,12 +76,12 @@ getTransformations()
 otc <- tm_map(onlytextcorpus, content_transformer(tolower)) #need to use content_transformer with tolower because of bug in newer version of tm package
 otc <- tm_map(otc, stripWhitespace)
 
-otc <- tm_map(otc, removePunctuation)
-otc <- tm_map(otc, toSpace, "-")
-otc <- tm_map(otc, toSpace, ":")
-otc <- tm_map(otc, removeWords, stopwords("english"))
-otc <- tm_map(otc, removeWords, c("url")) #insert words that you want to remove from corpus where "x" is
-otcstem <- tm_map(otc, stemDocument) #uses tm package stemming
+otc2 <- tm_map(otc, removePunctuation)
+otc2 <- tm_map(otc2, toSpace, "-")
+otc2 <- tm_map(otc2, toSpace, ":")
+otc2 <- tm_map(otc2, removeWords, stopwords("english"))
+otc2 <- tm_map(otc2, removeWords, c("url")) #insert words that you want to remove from corpus where "x" is
+otcstem <- tm_map(otc2, stemDocument) #uses tm package stemming
 
 #library(SnowballC)
 #otcstem0 <- tm_map(otc, content_transformer(wordStem), language="eng") #uses SnowballC package stemming
@@ -190,6 +160,34 @@ p <- p + geom_bar(stat="identity")
 p <- p + theme(axis.text.x=element_text(angle=45, hjust=1))   
 p  #error, fix later
 
+#try barplot
+  # schinria's code:
+muslim.docs <- tm_map(muslimCorpus, stemDocument)
+muslim.dtm <- TermDocumentMatrix(muslim.docs)
+muslim.m <- as.matrix(muslim.dtm)
+muslim.v <- sort(rowSums(muslim.m),decreasing=TRUE)
+muslim.d <- data.frame(word = names(muslim.v),freq=muslim.v)
+head(muslim.d, 10)
+findFreqTerms(muslim.dtm, lowfreq = 100)
+
+barplot(muslim.d[1:15,]$freq, las = 2, names.arg = muslim.d[1:15,]$word,
+        col ="lightblue", main ="Most frequent words Tweeted by Muslim-Names",
+        ylab = "Word frequencies")
+
+  # my code:
+# her muslim.m = my dtmstem2
+dtmstem <- DocumentTermMatrix(otcstem) # for corpus w/o stopwords and w/ tm stemming
+dtmstem2 <- as.matrix(dtmstem)
+dtmstem2.a <- sort(rowSums(dtmstem2),decreasing=TRUE)
+dtmstem2.d <- data.frame(word = names(dtmstem2.a),freq=dtmstem2.a)
+head(dtmstem2.d, 10)
+findFreqTerms(dtmstem, lowfreq = 600)
+
+barplot(dtmstem2.d[1:15,]$freq, las = 2, names.arg = dtmstem2.d[1:15,]$word,
+        col ="lightblue", main ="Most Frequently-Used Words in Sample",
+        ylab = "Word Frequencies")
+
+
 #------------# trying to split corpus by sentences #---------------#
 # Load Packages
 require(tm)
@@ -237,8 +235,37 @@ onlytextcorpus2 <- reshape_corpus(onlytextcorpus, convert_text_to_sentences)
 
 # ----------------------------------------------------------------------#
 
-# try using gender dictionary #
+# ------------------------------ # split by sentences before preprocessing # --------------------------------- #
 
+install.packages("quanteda")
+require(quanteda)
+
+class(inaugTexts) #inaugTexts is used in example in documentation
+
+# f uses VCorpus object
+f <- as.character(nytcorpus) #takes VCorpus object made with tm package and treats it as a character object, f
+str(f) #displays internal STRucture of an R object (similar to summary())
+myCorpus <- corpus(f)  # build the corpus using quanteda's corpus() function
+summary(f, n = 5) #look at 5 docs in f
+
+sentences <- tokenize(f, what = "sentence") #split f corpus by sentences
+sentences.n <- as.data.frame(unlist(sentences)) #
+
+# THIS IS THE BEST OPTION
+# uses onlytext, which is a character object created before from just TEXT column in nyt.merged df
+class(onlytext)
+sentences2 <- tokenize(onlytext, what = "sentence")
+sentences.n2 <- as.data.frame(unlist(sentences2)) #create data frame of split sentences
+sentences2.lower <- toLower(sentences2, keepAcronyms = FALSE) #make all sentences lowercase
+sentences.n2.lower <- as.data.frame(unlist(sentences2.lower)) # create dataframe of lowercase sentences
+
+kwic(sentences2.lower, "terror", valuetype = "regex")
+
+# ------------------------------------------------------------------------------------- #
+
+# ------------------------- # try using gender dictionary # ---------------------------- #
+library()
 head(NAMES, 20)
 tail(NAMES, 20)
 head(NAMES)
+

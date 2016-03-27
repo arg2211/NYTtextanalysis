@@ -42,4 +42,7 @@ This is my thesis project! I want to conduct a text analysis of gender related t
     + VCorpus object (created using tm package)
     + character object
     + NOTE: DO NOT make corpus all lowercase before tokenizing, the function relies on uppercase letters to help it split sentences more accurately
+
+5. Separate Sentences by Gender
+  * first create dictionary of words with gender-related words
   * 
