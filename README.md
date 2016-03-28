@@ -44,5 +44,7 @@ This is my thesis project! I want to conduct a text analysis of gender related t
     + NOTE: DO NOT make corpus all lowercase before tokenizing, the function relies on uppercase letters to help it split sentences more accurately
 
 5. Separate Sentences by Gender
-  * first create dictionary of words with gender-related words
+  * first create dictionary of words that are gender-related (list of words that indicate a woman is talked about and another list of words that indicate a man in being referenced)
+    + followed in Neal Caren's footsteps (http://nbviewer.jupyter.org/gist/nealcaren/5105037) and used gender-specific words from Danielle Sucher's "Jailbreak the Patriarchy" (https://raw.githubusercontent.com/DanielleSucher/Jailbreak-the-Patriarchy/master/myscript.js)
+  * 
   * 
