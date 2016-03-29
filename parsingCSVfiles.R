@@ -265,20 +265,21 @@ kwic(sentences2.lower, "terror", valuetype = "regex")
 
 # ------------------------- # try using gender dictionary # ---------------------------- #
 library(quanteda)
-genderDict <- dictionary(list(man = c("terrorism"),
-                          woman = c("jobs")))
+NCgenderDict <- dictionary(list(
+  man = c('guy', 'spokesman','chairman',"men's",'men','him',"he's",'his','boy',
+          'boyfriend','boyfriends','boys','brother','brothers','dad','dads','dude',
+          'father','fathers','fiance','gentleman','gentlemen','god','grandfather',
+          'grandpa','grandson','groom','he','himself','husband','husbands','king',
+          'male','man','mr','nephew','nephews','priest','prince','son','sons',
+          'uncle','uncles','waiter','widower','widowers'),
+  woman = c('heroine','spokeswoman','chairwoman',"women's",'actress','women',
+            "she's",'her','aunt','aunts','bride','daughter','daughters','female',
+            'fiancee','girl','girlfriend','girlfriends','girls','goddess',
+            'granddaughter','grandma','grandmother','herself','ladies','lady',
+            'lady','mom','moms','mother','mothers','mrs','ms','niece','nieces',
+            'priestess','princess','queens','she','sister','sisters','waitress',
+            'widow','widows','wife','wives','woman')))
 
-male_words=set(['guy','spokesman','chairman',"men's",'men','him',"he's",'his','boy',
-                'boyfriend','boyfriends','boys','brother','brothers','dad','dads','dude',
-                'father','fathers','fiance','gentleman','gentlemen','god','grandfather',
-                'grandpa','grandson','groom','he','himself','husband','husbands','king',
-                'male','man','mr','nephew','nephews','priest','prince','son','sons',
-                'uncle','uncles','waiter','widower','widowers'])
-female_words=set(['heroine','spokeswoman','chairwoman',"women's",'actress','women',
-                  "she's",'her','aunt','aunts','bride','daughter','daughters','female',
-                  'fiancee','girl','girlfriend','girlfriends','girls','goddess',
-                  'granddaughter','grandma','grandmother','herself','ladies','lady',
-                  'lady','mom','moms','mother','mothers','mrs','ms','niece','nieces',
-                  'priestess','princess','queens','she','sister','sisters','waitress',
-                  'widow','widows','wife','wives','woman'])
-
+nyt.dfm <- dfm(onlytext, dictionary = NCgenderDict)
+head(nyt.dfm, 30)
+nyt.dfm
