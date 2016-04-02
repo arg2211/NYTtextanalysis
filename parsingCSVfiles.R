@@ -326,42 +326,6 @@ sentences.n2.lower$both <- ifelse(grepl("guy|guys|spokesman|spokemsmen|chairman|
 |waitress|widow|widows|wife|wives|woman",
                                          sentences.n2.lower$all, ignore.case = TRUE), 1, 0)
 
-#try regex - attempt 1
-gender <- c("men","women","both")
-gender_new <- list(c("guy|guys|spokesman|spokemsmen|chairman|chairmen|man
-|man\\'s|men|him|he\\'s|his|boy|boyfriend|boyfriends|boys|brother|brothers|dad|dads|dude|dudes
-|father|fathers|fiance|gentleman|gentlemen|god|gods|grandfather|grandfathers|grandpa|grandson
-|grandsons|groom|grooms|he|himself|husband|husbands|king|kings|male|man|men|mr|nephew|nephews
-|priest|priests|prince|princes|son|sons|uncle|uncles|widower|widowers","men"),
-                   c("heroine|heroines|spokeswoman|spokeswomen|chairwoman
-|chairwomen|woman|women's|actress|actresses|women|she|she's|her|aunt|aunts|bride|brides
-|daughter|daughters|female|fiancee|girl|girlfriend
-|girlfriends|girls|goddess|granddaughter|grandma|grandmother|herself|ladies|lady|lady|mom
-|moms|mother|mothers|mrs|ms|niece|nieces|priestess|princess|queens|she|sister|sisters
-|waitress|widow|widows|wife|wives|woman", "women"),
-                   c("guy|guys|spokesman|spokemsmen|chairman|chairmen|man
-|man's|men|him|he's|his|boy|boyfriend|boyfriends|boys|brother|brothers|dad|dads|dude|dudes
-|father|fathers|fiance|gentleman|gentlemen|god|gods|grandfather|grandfathers|grandpa|grandson
-|grandsons|groom|grooms|he|himself|husband|husbands|king|kings|male|man|men|mr|nephew|nephews
-|priest|priests|prince|princes|son|sons|uncle|uncles|widower|widowers|heroine|heroines
-|spokeswoman|spokeswomen|chairwoman|chairwomen|woman|women's|actress|actresses|women|she
-|she's|her|aunt|aunts|bride|brides|daughter|daughters|female|fiancee|girl|girlfriend
-|girlfriends|girls|goddess|granddaughter|grandma|grandmother|herself|ladies|lady|lady|mom
-|moms|mother|mothers|mrs|ms|niece|nieces|priestess|princess|queens|she|sister|sisters
-|waitress|widow|widows|wife|wives|woman", "both")
-                   )
-
-regex.gender <- character(nrow(sentences2.lower))
-
-for(i in seq_along(gender_new)){
-  regex.gender[grepl(x = sentences.n2.lower$all, 
-                     ignore.case = TRUE, 
-                     pattern = gender_new[[i]][1])] <- gender_new[[i]][2]
-} 
-
-sentences.n2.lower$gender <- regex.gender
-
-
 
 # try regex - attempt #2
 
@@ -369,45 +333,33 @@ lists <- c("men", "women", "both", "none")
 
 regexes <- list(c("guy|guys|spokesman|spokemsmen|chairman|chairmen|man
 |man\\'s|men|him|he\\'s|his|boy|boyfriend|boyfriends|boys|brother|brothers|dad|dads|dude|dudes
-                     |father|fathers|fiance|gentleman|gentlemen|god|gods|grandfather|grandfathers|grandpa|grandson
-                     |grandsons|groom|grooms|he|himself|husband|husbands|king|kings|male|man|men|mr|nephew|nephews
-                     |priest|priests|prince|princes|son|sons|uncle|uncles|widower|widowers","men"),
+                |father|fathers|fiance|gentleman|gentlemen|god|gods|grandfather|grandfathers|grandpa|grandson
+               |grandsons|groom|grooms|he|himself|husband|husbands|king|kings|male|man|men|mr|nephew|nephews
+                 |priest|priests|prince|princes|son|sons|uncle|uncles|widower|widowers","men"),
                    c("heroine|heroines|spokeswoman|spokeswomen|chairwoman
                      |chairwomen|woman|women's|actress|actresses|women|she|she's|her|aunt|aunts|bride|brides
                      |daughter|daughters|female|fiancee|girl|girlfriend
                      |girlfriends|girls|goddess|granddaughter|grandma|grandmother|herself|ladies|lady|lady|mom
                      |moms|mother|mothers|mrs|ms|niece|nieces|priestess|princess|queens|she|sister|sisters
-                     |waitress|widow|widows|wife|wives|woman", "women"),
-                   c("guy|guys|spokesman|spokemsmen|chairman|chairmen|man
-                     |man's|men|him|he's|his|boy|boyfriend|boyfriends|boys|brother|brothers|dad|dads|dude|dudes
-                     |father|fathers|fiance|gentleman|gentlemen|god|gods|grandfather|grandfathers|grandpa|grandson
-                     |grandsons|groom|grooms|he|himself|husband|husbands|king|kings|male|man|men|mr|nephew|nephews
-                     |priest|priests|prince|princes|son|sons|uncle|uncles|widower|widowers|heroine|heroines
-                     |spokeswoman|spokeswomen|chairwoman|chairwomen|woman|women's|actress|actresses|women|she
-                     |she's|her|aunt|aunts|bride|brides|daughter|daughters|female|fiancee|girl|girlfriend
-                     |girlfriends|girls|goddess|granddaughter|grandma|grandmother|herself|ladies|lady|lady|mom
-                     |moms|mother|mothers|mrs|ms|niece|nieces|priestess|princess|queens|she|sister|sisters
-                     |waitress|widow|widows|wife|wives|woman", "both")
+                     |waitress|widow|widows|wife|wives|woman", "women")
                    )
 
 #Create a vector, the same length as the df
-output_vector <- character(nrow(tweet_all))
+output_vector <- character(nrow(sentences.n2.lower))
 
 #For each regex..
 for(i in seq_along(regexes)){
   
   #Grep through d$name, and when you find matches, insert the relevant 'tag' into
   #The output vector
-  output_vector[grepl(x = tweet_all$text,ignore.case = TRUE, pattern = regexes[[i]][1])] <- regexes[[i]][2]
+  output_vector[grepl(x = sentences.n2.lower$all,ignore.case = TRUE, 
+                      pattern = regexes[[i]][1])] <- regexes[[i]][2]
   
 } 
 #Insert that now-filled output vector into the dataframe
-tweet_all$candidate <- output_vector
-tweet_all <- subset(tweet_all, tweet_all$candidate != "")
+sentences.n2.lower$list <- output_vector
+sentences.n2.lower <- subset(sentences.n2.lower, sentences.n2.lower$list != "")
 
-Bernie <- subset(tweet_all, tweet_all$candidate == "Bernie")
-Hillary <- subset(tweet_all, tweet_all$candidate == "Hillary")
-Ted <- subset(tweet_all, tweet_all$candidate == "Ted")
-Marco <- subset(tweet_all, tweet_all$candidate == "Marco")
-Donald <- subset(tweet_all, tweet_all$candidate == "Donald")
+men.sub <- subset(sentences.n2.lower, sentences.n2.lower$list == "men")
+women.sub <- subset(sentences.n2.lower, sentences.n2.lower$list == "women")
 
