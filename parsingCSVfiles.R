@@ -69,6 +69,17 @@ onlytextvs <- VectorSource(onlytext)
 onlytextcorpus <- Corpus(onlytextvs)
 class(onlytextcorpus)
 
+# for onlytextcorpus, replace abbreviated months with full words
+onlytext.repl <- lapply(onlytext, function(x) {
+                    gsub(pattern = "jan.", replacement = "january", x) 
+                    })
+a <- c("jan.", "Jan.", "feb.", "Feb.", "mar.", "Mar.", "apr.", "Apr.", "jun.", "Jun.", 
+       "jul.", "Jul.", "aug.", "Aug.", "sept.", "Sept.", "oct.", "Oct.", "nov.", "Nov.", "dec.", "Dec.")
+b <- c("january","january", "february","february", "march","march", "april","april", "june","june", 
+       "july","july", "august","august", "september","september", "october","october", 
+       "november","november", "december","december")
+onlytext.repl <- mapply(gsub, a, b, onlytext, ignore.case = TRUE)
+
 # clean onlytextcorpus
 toSpace <- content_transformer(function(x, pattern) {return (gsub(pattern, " ", x))}) #creates function "toSpace" using gsub that replaces characters with a space
 
@@ -82,11 +93,6 @@ otc2 <- tm_map(otc2, toSpace, ":")
 otc2 <- tm_map(otc2, removeWords, stopwords("english"))
 otc2 <- tm_map(otc2, removeWords, c("url")) #insert words that you want to remove from corpus where "x" is
 otcstem <- tm_map(otc2, stemDocument) #uses tm package stemming
-
-#library(SnowballC)
-#otcstem0 <- tm_map(otc, content_transformer(wordStem), language="eng") #uses SnowballC package stemming
-#inspect(otcstem0)
-#class(otcstem0)
 
 # make a document term matrix (dtm)
 dtm <- DocumentTermMatrix(otc) # for original corpus w/o stopwords
@@ -116,15 +122,6 @@ countstem
 freqstem <- sort(freqstem, decreasing = TRUE)
 head(freqstem, 30)
 tail(freqstem, 10)
-
-# for SnowballC stemming - NOT WORKING FOR SOME REASON, LOOK INTO 
-#freqstem0 <- colSums(dtmstem02)
-#countstem0 <- rowSums(dtmstem02)
-#countstem0
-#freqstem0 <- sort(freqstem0, decreasing = TRUE)
-#head(freqstem0, 30)
-#tail(freqstem0, 10)
-
 
 # create a wordcloud
 library(wordcloud)
@@ -188,51 +185,6 @@ barplot(dtmstem2.d[1:15,]$freq, las = 2, names.arg = dtmstem2.d[1:15,]$word,
         ylab = "Word Frequencies")
 
 
-#------------# trying to split corpus by sentences #---------------#
-# Load Packages
-require(tm)
-require(NLP)
-require(openNLP)
-require(qdap)
-
-# set up function to convert text to sentences
-convert_text_to_sentences <- function(text, lang = "en") {
-  # Function to compute sentence annotations using the Apache OpenNLP Maxent sentence detector 
-  # employing the default model for language 'en'. 
-  sentence_token_annotator <- Maxent_Sent_Token_Annotator(language = lang) #from original
-  
-  # Convert text to class String from package NLP
-  text <- as.String(text)
-  
-  # Sentence boundaries in text
-  sentence.boundaries <- annotate(text, sentence_token_annotator)
-  
-  # Extract sentences
-  sentences <- text[sentence.boundaries]
-  
-  # return sentences
-  return(sentences)
-}
-
-# reshape corpus hack *NOTE* will lose metadata unless recode
-reshape_corpus <- function(onlytextcorpus, FUN, ...) {
-  # Extract the text from each document in the corpus and put into a list
-  text <- lapply(onlytextcorpus, content_transformer)
-  
-  # Basically convert the text
-  docs <- lapply(text, FUN, ...)
-  docs <- as.vector(unlist(docs))
-  
-  # Create a new corpus structure and return it
-  new.corpus <- Corpus(VectorSource(docs))
-  return(new.corpus)
-}
-
-# then use function just created to reshape the corpus into sentences (use onlytextcorpus which has not been preprocessed yet)
-onlytextcorpus2 <- reshape_corpus(onlytextcorpus, convert_text_to_sentences)
-
-# ----------------------------------------------------------------------#
-
 # ------------------------------ # split by sentences before preprocessing # --------------------------------- #
 
 require(quanteda)
@@ -249,9 +201,9 @@ sentences <- tokenize(f, what = "sentence") #split f corpus by sentences
 sentences.n <- as.data.frame(unlist(sentences)) #
 
 # THIS IS THE BEST OPTION
-# uses onlytext, which is a character object created before from just TEXT column in nyt.merged df
-class(onlytext)
-sentences2 <- tokenize(onlytext, what = "sentence")
+# uses onlytext.repl, which is a character object created before from just TEXT column in nyt.merged df
+class(onlytext.repl)
+sentences2 <- tokenize(onlytext.repl, what = "sentence")
 sentences.n2 <- as.data.frame(unlist(sentences2)) #create data frame of split sentences
 sentences2.lower <- toLower(sentences2, keepAcronyms = FALSE) #make all sentences lowercase
 sentences.n2.lower <- as.data.frame(unlist(sentences2.lower)) # create dataframe of lowercase sentences
@@ -294,38 +246,29 @@ nyt.dfm <- dfm(onlytext, dictionary = NCgenderDict)
 head(nyt.dfm, 30)
 nyt.dfm
 
-pmatch(NCgenderDict$man, g, nomatch = 0)
-
 #try grepl - not working
 
 colnames(sentences.n2.lower) = c("all")
-sentences.n2.lower$men <- ifelse(grepl("guy|guys|spokesman|spokemsmen|chairman|chairmen|man
-|man\\'s|men|him|he\\'s|his|boy|boyfriend|boyfriends|boys|brother|brothers|dad|dads|dude|dudes
+sentences.n2.lower$men <- ifelse(grepl("\\b(guy|guys|spokesman|spokemsmen|chairman|chairmen|man
+|men|him|he|his|boy|boyfriend|boyfriends|boys|brother|brothers|dad|dads|dude|dudes
 |father|fathers|fiance|gentleman|gentlemen|god|gods|grandfather|grandfathers|grandpa|grandson
 |grandsons|groom|grooms|he|himself|husband|husbands|king|kings|male|man|men|mr|nephew|nephews
-|priest|priests|prince|princes|son|sons|uncle|uncles|widower|widowers", 
+|priest|priests|prince|princes|son|sons|uncle|uncles|widower|widowers)\\b", 
                                        sentences.n2.lower$all, ignore.case = TRUE), 1, 0)
 
-sentences.n2.lower$women <- ifelse(grepl("heroine|heroines|spokeswoman|spokeswomen|chairwoman
+sentences.n2.lower$women <- ifelse(grepl("\\b(heroine|heroines|spokeswoman|spokeswomen|chairwoman
 |chairwomen|woman|women's|actress|actresses|women|she|she's|her|aunt|aunts|bride|brides
 |daughter|daughters|female|fiancee|girl|girlfriend
 |girlfriends|girls|goddess|granddaughter|grandma|grandmother|herself|ladies|lady|lady|mom
 |moms|mother|mothers|mrs|ms|niece|nieces|priestess|princess|queens|she|sister|sisters
-|waitress|widow|widows|wife|wives|woman",
+|waitress|widow|widows|wife|wives|woman)\\b",
                                          sentences.n2.lower$all, ignore.case = TRUE), 1, 0)
 
-sentences.n2.lower$both <- ifelse(grepl("guy|guys|spokesman|spokemsmen|chairman|chairmen|man
-|man's|men|him|he's|his|boy|boyfriend|boyfriends|boys|brother|brothers|dad|dads|dude|dudes
-|father|fathers|fiance|gentleman|gentlemen|god|gods|grandfather|grandfathers|grandpa|grandson
-|grandsons|groom|grooms|he|himself|husband|husbands|king|kings|male|man|men|mr|nephew|nephews
-|priest|priests|prince|princes|son|sons|uncle|uncles|widower|widowers|heroine|heroines
-|spokeswoman|spokeswomen|chairwoman|chairwomen|woman|women's|actress|actresses|women|she
-|she's|her|aunt|aunts|bride|brides|daughter|daughters|female|fiancee|girl|girlfriend
-|girlfriends|girls|goddess|granddaughter|grandma|grandmother|herself|ladies|lady|lady|mom
-|moms|mother|mothers|mrs|ms|niece|nieces|priestess|princess|queens|she|sister|sisters
-|waitress|widow|widows|wife|wives|woman",
-                                         sentences.n2.lower$all, ignore.case = TRUE), 1, 0)
+sentences.n2.lower$both <- ifelse(sentences.n2.lower$men==1 & sentences2.lower$women==1, 1, 0)
 
+ifelse (ex1[1] == ex1[2] & ex1[1] == ex1$qit, 1,
+        ifelse ( ex1[1] == ex1$qit | ex1[2] == ex1$qit, 0.5,
+                 NA))
 
 # try regex - attempt #2
 
