@@ -65,9 +65,13 @@ summary(nytcorpus)
 onlytext <- paste(nyt.merged$TEXT, collapse = " ", stringsAsFactors = FALSE)
 class(onlytext)
 summary(onlytext)
+
 onlytextvs <- VectorSource(onlytext)
 onlytextcorpus <- Corpus(onlytextvs)
 class(onlytextcorpus)
+
+# fix
+onlytext.df <- as.data.frame(as.character(onlytext))
 
 # for onlytextcorpus, replace abbreviated months with full words
 onlytext.repl <- lapply(onlytext, function(x) {
@@ -101,9 +105,6 @@ dtm # gives number of terms in documents
 
 dtmstem <- DocumentTermMatrix(otcstem) # for corpus w/o stopwords and w/ tm stemming
 dtmstem2 <- as.matrix(dtmstem)
-
-#dtmstem0 <- DocumentTermMatrix(otcstem0) # for corpus w/o stopwords and w/ SnowballC stemming
-#dtmstem02 <- as.matrix(dtmstem0)
 
 # find most frequent terms
 freq <- colSums(dtm2)
@@ -208,6 +209,13 @@ sentences.n2 <- as.data.frame(unlist(sentences2)) #create data frame of split se
 sentences2.lower <- toLower(sentences2, keepAcronyms = FALSE) #make all sentences lowercase
 sentences.n2.lower <- as.data.frame(unlist(sentences2.lower)) # create dataframe of lowercase sentences
 
+class(onlytext)
+sentences3 <- tokenize(onlytext, what = "sentence")
+sentences.n3 <- as.data.frame(unlist(sentences3)) #create data frame of split sentences
+sentences3.lower <- toLower(sentences3, keepAcronyms = FALSE) #make all sentences lowercase
+sentences.n3.lower <- as.data.frame(unlist(sentences3.lower)) # create dataframe of lowercase sentences
+
+
 kwic(sentences2.lower, "terror", valuetype = "regex")
 
 # ------------------------------------------------------------------------------------- #
@@ -246,7 +254,7 @@ nyt.dfm <- dfm(onlytext, dictionary = NCgenderDict)
 head(nyt.dfm, 30)
 nyt.dfm
 
-#try grepl - not working
+#try grepl - it works!
 
 colnames(sentences.n2.lower) = c("all")
 sentences.n2.lower$men <- ifelse(grepl("\\b(guy|guys|spokesman|spokemsmen|chairman|chairmen|man
@@ -265,6 +273,9 @@ sentences.n2.lower$women <- ifelse(grepl("\\b(heroine|heroines|spokeswoman|spoke
                                          sentences.n2.lower$all, ignore.case = TRUE), 1, 0)
 
 sentences.n2.lower$both <- ifelse(sentences.n2.lower$men==1 & sentences2.lower$women==1, 1, 0)
+sentences.n2.lower$none <- ifelse(sentences.n2.lower$men==0 & sentences2.lower$women==0, 1, 0)
+
+
 
 ifelse (ex1[1] == ex1[2] & ex1[1] == ex1$qit, 1,
         ifelse ( ex1[1] == ex1$qit | ex1[2] == ex1$qit, 0.5,
