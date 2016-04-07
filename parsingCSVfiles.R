@@ -256,24 +256,26 @@ nyt.dfm
 
 #try grepl - it works!
 
-colnames(sentences.n2.lower) = c("all")
-sentences.n2.lower$men <- ifelse(grepl("\\b(guy|guys|spokesman|spokemsmen|chairman|chairmen|man
+colnames(sentences.n3.lower) = c("all")
+sentences.n3.lower$men <- ifelse(grepl("\\b(guy|guys|spokesman|spokemsmen|chairman|chairmen|man
 |men|him|he|his|boy|boyfriend|boyfriends|boys|brother|brothers|dad|dads|dude|dudes
 |father|fathers|fiance|gentleman|gentlemen|god|gods|grandfather|grandfathers|grandpa|grandson
 |grandsons|groom|grooms|he|himself|husband|husbands|king|kings|male|man|men|mr|nephew|nephews
 |priest|priests|prince|princes|son|sons|uncle|uncles|widower|widowers)\\b", 
-                                       sentences.n2.lower$all, ignore.case = TRUE), 1, 0)
+                                       sentences.n3.lower$all, ignore.case = TRUE), 1, 0)
 
-sentences.n2.lower$women <- ifelse(grepl("\\b(heroine|heroines|spokeswoman|spokeswomen|chairwoman
+sentences.n3.lower$women <- ifelse(grepl("\\b(heroine|heroines|spokeswoman|spokeswomen|chairwoman
 |chairwomen|woman|women's|actress|actresses|women|she|she's|her|aunt|aunts|bride|brides
 |daughter|daughters|female|fiancee|girl|girlfriend
 |girlfriends|girls|goddess|granddaughter|grandma|grandmother|herself|ladies|lady|lady|mom
 |moms|mother|mothers|mrs|ms|niece|nieces|priestess|princess|queens|she|sister|sisters
 |waitress|widow|widows|wife|wives|woman)\\b",
-                                         sentences.n2.lower$all, ignore.case = TRUE), 1, 0)
+                                         sentences.n3.lower$all, ignore.case = TRUE), 1, 0)
 
-sentences.n2.lower$both <- ifelse(sentences.n2.lower$men==1 & sentences2.lower$women==1, 1, 0)
-sentences.n2.lower$none <- ifelse(sentences.n2.lower$men==0 & sentences2.lower$women==0, 1, 0)
+sentences.n3.lower$both <- ifelse((sentences.n3.lower$men==1 & sentences.n3.lower$women==1), 1, 0)
+str(sentences.n3.lower)
+sentences.n3.lower$none <- ifelse((sentences.n3.lower$men==0 & sentences.n3.lower$women==0), 1, 0)
+
 
 
 
