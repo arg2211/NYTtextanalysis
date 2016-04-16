@@ -5,13 +5,10 @@ setwd("~/GitHub/NYTtextanalysis/data/random2015dates")
 options(stringsAsFactors = FALSE)
 
 # ----------------------- # clean .csv files and combine into one data frame # --------------------------- #
-
 library(tm)
 
 # load .csv file containing text and metadata
 # (created with my edited version of Neal Caren's Python script split_ln.py)
-# nyt <- read.csv('<filename>.csv', header = TRUE, stringsAsFactors = FALSE)
-#NEED TO FIND A MORE SUCCINCT WAY TO DO THIS
 nyt01 <- read.csv('nyt01-02-15.csv', header = TRUE, stringsAsFactors = FALSE)
 nyt02 <- read.csv('nyt02-02-15.csv', header = TRUE, stringsAsFactors = FALSE)
 nyt03 <- read.csv('nyt03-20-15.csv', header = TRUE, stringsAsFactors = FALSE)
@@ -25,9 +22,8 @@ nyt10 <- read.csv('nyt10-17-15.csv', header = TRUE, stringsAsFactors = FALSE)
 nyt11 <- read.csv('nyt11-10-15.csv', header = TRUE, stringsAsFactors = FALSE)
 nyt12 <- read.csv('nyt12-10-15.csv', header = TRUE, stringsAsFactors = FALSE)
 
-colnames(nyt08)
-
-#keep only the columns I want (also makes it easier to merge data frames)
+# keep only the columns I want and move those into new dataframes
+# (also makes it easier to merge data frames)
 df01 <- subset(nyt01, select = c(SEARCH_ROW, PUBLICATION, SECTION, DATE, TITLE, BYLINE, COUNTRY, STATE, CITY, PERSON, SUBJECT, LENGTH, TEXT))
 df02 <- subset(nyt02, select = c(SEARCH_ROW, PUBLICATION, SECTION, DATE, TITLE, BYLINE, COUNTRY, STATE, CITY, PERSON, SUBJECT, LENGTH, TEXT))
 df03 <- subset(nyt03, select = c(SEARCH_ROW, PUBLICATION, SECTION, DATE, TITLE, BYLINE, COUNTRY, STATE, CITY, PERSON, SUBJECT, LENGTH, TEXT))
@@ -41,104 +37,14 @@ df10 <- subset(nyt10, select = c(SEARCH_ROW, PUBLICATION, SECTION, DATE, TITLE, 
 df11 <- subset(nyt11, select = c(SEARCH_ROW, PUBLICATION, SECTION, DATE, TITLE, BYLINE, COUNTRY, STATE, CITY, PERSON, SUBJECT, LENGTH, TEXT))
 df12 <- subset(nyt12, select = c(SEARCH_ROW, PUBLICATION, SECTION, DATE, TITLE, BYLINE, COUNTRY, STATE, CITY, PERSON, SUBJECT, LENGTH, TEXT))
 
+# merge all 12 days of articles together into one dataframe
 nyt.merged <- rbind(df01, df02, df03, df04, df05, df06, df07, df08, df09, df10, df11, df12)
-save(nyt.merged, file = "nyt.merged.rda")
+
+# write new merged dataframe to a .csv file
 write.csv(nyt.merged, file = "nyt.merged.csv")
 
-# ------------------------------ # load cleaned data file # ---------------------------------- #
-
-load("nyt.merged.rda")  
-# OR
-nyt.merged <- read.csv("nyt.merged.csv")
-
-# --------------------- # preprocessing & creating a corpus # ---------------------- #
-library(tm)
-
-# create a corpus from text and metadata
-getReaders()
-nytcorpus <- VCorpus(DataframeSource(nyt.merged))
-
-class(nytcorpus) #just making sure it's a corpus
-inspect(nytcorpus) #gives info about all "documents" in corpus
-inspect(nytcorpus[2]) #gives info about only the 2nd "document" in corpus
-summary(nytcorpus)
-
-# create a corpus with only text in it
-onlytext <- paste(nyt.merged$TEXT, collapse = " ", stringsAsFactors = FALSE)
-
-class(onlytext)
-summary(onlytext)
-
-onlytextvs <- VectorSource(onlytext)
-onlytextcorpus <- Corpus(onlytextvs)
-class(onlytextcorpus)
-
-# for onlytextcorpus, replace abbreviated months with full words
-onlytext.repl <- lapply(onlytext, function(x) {
-                    gsub(pattern = "jan.", replacement = "january", x) 
-                    })
-a <- c("jan.", "Jan.", "feb.", "Feb.", "mar.", "Mar.", "apr.", "Apr.", "jun.", "Jun.", 
-       "jul.", "Jul.", "aug.", "Aug.", "sept.", "Sept.", "oct.", "Oct.", "nov.", "Nov.", "dec.", "Dec.")
-b <- c("january","january", "february","february", "march","march", "april","april", "june","june", 
-       "july","july", "august","august", "september","september", "october","october", 
-       "november","november", "december","december")
-onlytext.repl <- mapply(gsub, a, b, onlytext, ignore.case = TRUE)
-
-# clean onlytextcorpus
-# create a function
-toSpace <- content_transformer(function(x, pattern) {return (gsub(pattern, " ", x))}) #creates function "toSpace" using gsub that replaces characters with a space
-
-getTransformations()
-otc <- tm_map(onlytextcorpus, content_transformer(tolower)) #need to use content_transformer with tolower because of bug in newer version of tm package
-otc <- tm_map(otc, stripWhitespace)
-
-otc2 <- tm_map(otc, removePunctuation)
-otc2 <- tm_map(otc2, toSpace, "-")
-otc2 <- tm_map(otc2, toSpace, ":")
-otc2 <- tm_map(otc2, removeWords, stopwords("english"))
-otc2 <- tm_map(otc2, removeWords, c("url")) #insert words that you want to remove from corpus where "x" is
-otcstem <- tm_map(otc2, stemDocument) #uses tm package stemming
-
-# make a document term matrix (dtm)
-dtm <- DocumentTermMatrix(otc) # for original corpus w/o stopwords
-dtm2 <- as.matrix(dtm)
-dtm # gives number of terms in documents 
-
-dtmstem <- DocumentTermMatrix(otcstem) # for corpus w/o stopwords and w/ tm stemming
-dtmstem2 <- as.matrix(dtmstem)
-
-# find most frequent terms
-freq <- colSums(dtm2)
-count <- rowSums(dtm2)
-count
-#str(freq)
-freq <- sort(freq, decreasing = TRUE)
-head(freq, 30)
-tail(freq, 10)
-head(table(freq), 30) #shows you a table of frequencies (how many words [bottom row] appear this frequently [top row])
-
-# for tm stemming
-freqstem <- colSums(dtmstem2)
-countstem <- rowSums(dtmstem2)
-countstem
-freqstem <- sort(freqstem, decreasing = TRUE)
-head(freqstem, 30)
-tail(freqstem, 10)
-
-# create a wordcloud
-library(wordcloud)
-library(RColorBrewer)
-
-words <- names(freq)
-wordcloud(words[1:100], freq[1:100])
-wordcloud(names(freq), freq, max.words=100) #creates word cloud of words, by frequency (larger text = more), with max of 100 words displayed
-wordcloud(names(freq), freq, min.freq=600, colors=brewer.pal(8, "Dark2")) #creates word cloud of words, by frequency (larger text = more), with only words that occur 1000+ times
-
-wordcloud(names(freqstem), freqstem, min.freq=600, colors=brewer.pal(8, "Dark2")) #creates word cloud of words, by frequency (larger text = more), with only words that occur 1000+ times
-
-
-# descriptive stats on articles
-# NEED TO FIX
+# --------------------- # NEED TO FIX # ------------------------------ #
+# create graph of number of articles in sample, per day
 art <- c(141, 145, 255, 167, 204, 171, 354, 341, 216, 169, 189, 230, 215)
 mean(art)
 hist(art,
@@ -149,7 +55,7 @@ hist(art,
      main = "Number of NYT Articles Published per Day",
      xlab = "Randomly-Selected Days",
      ylab = "Number of Articles")
-     #ylim = c(0, 400)
+#ylim = c(0, 400)
 
 # try using ggplot for graphing
 library(ggplot2)   
@@ -160,7 +66,7 @@ p <- p + theme(axis.text.x=element_text(angle=45, hjust=1))
 p  #error, fix later
 
 #try barplot
-  # schinria's code:
+# schinria's code:
 muslim.docs <- tm_map(muslimCorpus, stemDocument)
 muslim.dtm <- TermDocumentMatrix(muslim.docs)
 muslim.m <- as.matrix(muslim.dtm)
@@ -173,7 +79,7 @@ barplot(muslim.d[1:15,]$freq, las = 2, names.arg = muslim.d[1:15,]$word,
         col ="lightblue", main ="Most frequent words Tweeted by Muslim-Names",
         ylab = "Word frequencies")
 
-  # my code:
+# my code:
 # her muslim.m = my dtmstem2
 dtmstem <- DocumentTermMatrix(otcstem) # for corpus w/o stopwords and w/ tm stemming
 dtmstem2 <- as.matrix(dtmstem)
@@ -187,345 +93,157 @@ barplot(dtmstem2.d[1:15,]$freq, las = 2, names.arg = dtmstem2.d[1:15,]$word,
         ylab = "Word Frequencies")
 
 
-# ------------------------------ # split by sentences before preprocessing # --------------------------------- #
+# --------------------- # load cleaned data file # ------------------------ #
+nyt.merged <- read.csv("nyt.merged.csv")
 
-require(quanteda)
+# --------------------- # creating a corpus # ----------------------------- #
+library(tm)
 
+# create a corpus only using text data from dataframe
+onlytext <- paste(nyt.merged$TEXT, collapse = " ", stringsAsFactors = FALSE)
+onlytextcorpus <- Corpus(VectorSource(onlytext))
+
+# creates function "toSpace" using gsub that replaces characters with a space
+# from http://www.sthda.com/english/wiki/text-mining-and-word-cloud-fundamentals-in-r-5-simple-steps-you-should-know
+toSpace <- content_transformer(function(x, pattern) {return (gsub(pattern, " ", x))}) 
+
+# clean onlytextcorpus
+# create otc - lowercase + no extra white space
+otc <- tm_map(onlytextcorpus, content_transformer(tolower)) #need to use content_transformer with tolower because of bug in newer version of tm package
+otc <- tm_map(otc, stripWhitespace)
+# create otc2 - no stopwords
+otc2 <- tm_map(otc, removePunctuation)
+otc2 <- tm_map(otc2, removeNumbers)
+otc2 <- tm_map(otc2, toSpace, "-")
+otc2 <- tm_map(otc2, toSpace, ":")
+otc2 <- tm_map(otc2, toSpace, "%")
+otc2 <- tm_map(otc2, removeWords, stopwords("english"))
+otc2 <- tm_map(otc2, removeWords, c("url")) #insert words that you want to remove from corpus where "x" is
+otc2 <- tm_map(otc2, stripWhitespace)
+# create otcstem - no stopwords + stemmed
+otcstem <- tm_map(otc2, stemDocument) #uses tm package stemming
+
+# make a document term matrix (dtm)
+# for otc
+dtm.otc <- DocumentTermMatrix(otc)
+dtm.m.otc <- as.matrix(dtm.otc)
+dtm.otc # gives number of terms in documents # 131,986 terms
+# for otc2
+dtm.otc2 <- DocumentTermMatrix(otc2)
+dtm.m.otc2 <- as.matrix(dtm.otc2)
+dtm.otc2 # 69,525 terms
+# for otcstem
+dtm.stem <- DocumentTermMatrix(otcstem)
+dtm.m.otcstem <- as.matrix(dtm.stem)
+dtm.stem # 49,377 terms
+
+# find most frequent terms in document term matrices
+# for otc
+freq.otc <- colSums(dtm.m.otc)
+freq.otc <- sort(freq.otc, decreasing = TRUE)
+head(freq.otc, 30) # gives top 30 most used words
+count.otc <- rowSums(dtm.m.otc)
+count.otc # 1,400,486 words
+# for otc2
+freq.otc2 <- colSums(dtm.m.otc2)
+freq.otc2 <- sort(freq.otc2, decreasing = TRUE)
+head(freq.otc2, 30) # gives top 30 most used words
+count.otc2 <- rowSums(dtm.m.otc2)
+count.otc2 # 945,003 words
+# for otcstem
+freq.otcstem <- colSums(dtm.m.otcstem)
+freq.otcstem <- sort(freq.otcstem, decreasing = TRUE)
+head(freq.otcstem, 30) # gives top 30 most used words
+count.stem <- rowSums(dtm.m.otcstem)
+count.stem # 942,968
+
+# create a wordcloud just for otcstem (not for otc or otc2)
+library(wordcloud)
+library(RColorBrewer)
+# create word cloud by frequency with only words that occur 1000+ times
+# the larger the font, the more the word occurs
+wordcloud(names(freq.otcstem), freq.otcstem, min.freq=1000, colors=brewer.pal(8, "Dark2"), random.order = FALSE) 
+
+
+# ------------------------------ # split by sentences # --------------------------------- #
+# see quanteda documentation for help
 class(inaugTexts) #inaugTexts is used in example in documentation
 
-# f uses VCorpus object
-f <- as.character(nytcorpus) #takes VCorpus object made with tm package and treats it as a character object, f
-str(f) #displays internal STRucture of an R object (similar to summary())
-myCorpus <- corpus(f)  # build the corpus using quanteda's corpus() function
-summary(f, n = 5) #look at 5 docs in f
+require(quanteda)
+class(onlytext) # need to begin with a character object
+sentences <- tokenize(onlytext, what = "sentence")
+sentences <- toLower(sentences, keepAcronyms = FALSE) # make all sentences lowercase
+sentences.df <- as.data.frame(unlist(sentences)) # create dataframe of lowercase sentences
+colnames(sentences.df) = c("all") # rename column in dataframe to "all"
 
-sentences <- tokenize(f, what = "sentence") #split f corpus by sentences
-sentences.n <- as.data.frame(unlist(sentences)) #
-
-# THIS IS THE BEST OPTION
-# uses onlytext.repl, which is a character object created before from just TEXT column in nyt.merged df
-class(onlytext.repl)
-sentences2 <- tokenize(onlytext.repl, what = "sentence")
-sentences.n2 <- as.data.frame(unlist(sentences2)) #create data frame of split sentences
-sentences2.lower <- toLower(sentences2, keepAcronyms = FALSE) #make all sentences lowercase
-sentences.n2.lower <- as.data.frame(unlist(sentences2.lower)) # create dataframe of lowercase sentences
-
-class(onlytext)
-sentences3 <- tokenize(onlytext, what = "sentence")
-sentences.n3 <- as.data.frame(unlist(sentences3)) #create data frame of split sentences
-sentences3.lower <- toLower(sentences3, keepAcronyms = FALSE) #make all sentences lowercase
-sentences.n3.lower <- as.data.frame(unlist(sentences3.lower)) # create dataframe of lowercase sentences
-
-
-kwic(sentences2.lower, "terror", valuetype = "regex")
-
-# ------------------------------------------------------------------------------------- #
-
-# ------------------------- # try using gender dictionary # ---------------------------- #
-library(quanteda)
-NCgenderDict <- dictionary(list(
-  man = c('guy', 'spokesman','chairman',"men's",'men','him',"he's",'his','boy',
-          'boyfriend','boyfriends','boys','brother','brothers','dad','dads','dude',
-          'father','fathers','fiance','gentleman','gentlemen','god','grandfather',
-          'grandpa','grandson','groom','he','himself','husband','husbands','king',
-          'male','man','mr','nephew','nephews','priest','prince','son','sons',
-          'uncle','uncles','waiter','widower','widowers'),
-  woman = c('heroine','spokeswoman','chairwoman',"women's",'actress','women',
-            "she's",'her','aunt','aunts','bride','daughter','daughters','female',
-            'fiancee','girl','girlfriend','girlfriends','girls','goddess',
-            'granddaughter','grandma','grandmother','herself','ladies','lady',
-            'lady','mom','moms','mother','mothers','mrs','ms','niece','nieces',
-            'priestess','princess','queens','she','sister','sisters','waitress',
-            'widow','widows','wife','wives','woman')))
-class(NCgenderDict)
-NCgenderDict$man
-
-class(sentences2.lower)
-sentences2.lower.vs <- VectorSource(sentences2.lower)
-sentences2.lower.corpus <- Corpus(sentences2.lower.vs)
-
-g <- as.character(sentences2.lower)
-nyt.dfm2 <- dfm(g, dictionary = NCgenderDict)
-head(nyt.dfm, 30)
-nyt.dfm2
-g.df <- as.data.frame(unlist(nyt.dfm2))
-
-class(onlytext)
-nyt.dfm <- dfm(onlytext, dictionary = NCgenderDict)
-head(nyt.dfm, 30)
-nyt.dfm
-
-#try grepl - it works!
-
-colnames(sentences.n3.lower) = c("all")
-
-# ADD POSSESSIVES
-sentences.n3.lower$men <- ifelse(grepl("\\b(guys?|spokesm[ae]n|chairm[ae]n|m[ae]n
+# use grepl / regex to categorize sentences by gender
+# NEED TO ADD POSSESSIVES
+# if any of these words appear in a sentence, assign "1" to new variable 'men'
+sentences.df$men <- ifelse(grepl("\\b(guys?|spokesm[ae]n|chairm[ae]n|m[ae]n
 |him|he|his|boys?|boyfriends?|brothers?|dads?|dudes?|fathers?|gentlem[ae]n|gods?
 |grandfathers?|grandpas?|grandsons?|grooms?|himself|hisself|husbands?|kings?|males?
 |mr|nephews?|priests?|princes?|sons?|uncles?|widowers?)\\b", 
-                                       sentences.n3.lower$all, ignore.case = TRUE), 1, 0)
+                                       sentences.df$all, ignore.case = TRUE), 1, 0)
 
-sentences.n3.lower$women <- ifelse(grepl("\\b(heroines?|spokeswom[ae]n|chairwom[ae]n
+# COME BACK TO THIS - WANT TO ACCOUNT FOR APOSTRPHES - |he\\'s|dad\\'s|father\\'s|gentlem[ae]n\\'s
+
+# if any of these words appear in a sentence, assign "1" to new variable 'women'
+sentences.df$women <- ifelse(grepl("\\b(heroines?|spokeswom[ae]n|chairwom[ae]n
 |wom[ae]n|actress|actresses|she|her|aunts?|brides?|daughters?|females?|girls?|girlfriends?
 |goddess|goddesses|granddaughters?|grandmas?|grandmothers?|herself|ladies|lady|moms?
 |mothers?|mrs|ms|nieces?|priestess|priestesses|princess|princesses|queens?|sisters?
 |waitress|waitresses|widows?|wife|wives)\\b",
-                                         sentences.n3.lower$all, ignore.case = TRUE), 1, 0)
+                                         sentences.df$all, ignore.case = TRUE), 1, 0)
+# create new variables 'both' and 'none' from previous variables 'men' and 'women'
+sentences.df$both <- ifelse((sentences.df$men==1 & sentences.df$women==1), 1, 0)
+sentences.df$none <- ifelse((sentences.df$men==0 & sentences.df$women==0), 1, 0)
 
-sentences.n3.lower$both <- ifelse((sentences.n3.lower$men==1 & sentences.n3.lower$women==1), 1, 0)
-str(sentences.n3.lower)
-sentences.n3.lower$none <- ifelse((sentences.n3.lower$men==0 & sentences.n3.lower$women==0), 1, 0)
+# count number of sentences that fall into each category
+sum(sentences.df$none) # 56,237 sentences that are about neither men nor women
+sum(sentences.df$both) # 2,544 sentences that contain words about both men and women
+sum(sentences.df$men) # 23,111 sentences that contain a 'man' word
+sum(sentences.df$women) # 9,511 sentences that contain a 'woman' word
 
-sum(sentences.n3.lower$none) # 56,237 sentences that are about men, women, or both
-sum(sentences.n3.lower$both) # 2,544 sentences that contain words about both men and women
-
-
-# 
-# ifelse (ex1[1] == ex1[2] & ex1[1] == ex1$qit, 1,
-#         ifelse ( ex1[1] == ex1$qit | ex1[2] == ex1$qit, 0.5,
-#                  NA))
-# 
-# # try regex - attempt #2
-# 
-# lists <- c("men", "women", "both", "none")
-# 
-# regexes <- list(c("guy|guys|spokesman|spokemsmen|chairman|chairmen|man
-# |man\\'s|men|him|he\\'s|his|boy|boyfriend|boyfriends|boys|brother|brothers|dad|dads|dude|dudes
-#                 |father|fathers|fiance|gentleman|gentlemen|god|gods|grandfather|grandfathers|grandpa|grandson
-#                |grandsons|groom|grooms|he|himself|husband|husbands|king|kings|male|man|men|mr|nephew|nephews
-#                  |priest|priests|prince|princes|son|sons|uncle|uncles|widower|widowers","men"),
-#                    c("heroine|heroines|spokeswoman|spokeswomen|chairwoman
-#                      |chairwomen|woman|women's|actress|actresses|women|she|she's|her|aunt|aunts|bride|brides
-#                      |daughter|daughters|female|fiancee|girl|girlfriend
-#                      |girlfriends|girls|goddess|granddaughter|grandma|grandmother|herself|ladies|lady|lady|mom
-#                      |moms|mother|mothers|mrs|ms|niece|nieces|priestess|princess|queens|she|sister|sisters
-#                      |waitress|widow|widows|wife|wives|woman", "women")
-#                    )
-# 
-# #Create a vector, the same length as the df
-# output_vector <- character(nrow(sentences.n2.lower))
-# 
-# #For each regex..
-# for(i in seq_along(regexes)){
-#   
-#   #Grep through d$name, and when you find matches, insert the relevant 'tag' into
-#   #The output vector
-#   output_vector[grepl(x = sentences.n2.lower$all,ignore.case = TRUE, 
-#                       pattern = regexes[[i]][1])] <- regexes[[i]][2]
-#   
-# } 
-# #Insert that now-filled output vector into the dataframe
-# sentences.n2.lower$list <- output_vector
-# sentences.n2.lower <- subset(sentences.n2.lower, sentences.n2.lower$list != "")
-# 
-# men.sub <- subset(sentences.n2.lower, sentences.n2.lower$list == "men")
-# women.sub <- subset(sentences.n2.lower, sentences.n2.lower$list == "women")
-
-
-# ---------------- # now split sentences about men and # ------------------------- #
-# ---------------- # sentences about women into (not both) # --------------------- #
-# ---------------- # into new data frames # -------------------------------------- #
-
-s.men <- subset(sentences.n3.lower, men==1 & women!=1)
-s.women <- subset(sentences.n3.lower, women==1 & men!=1)
-sum(s.women$both) # check to make sure there are no words that fit the 'none' or 'both' category
+# create subsets of sentences only about 'men' and only about 'women'
+s.men <- subset(sentences.df, men==1 & women!=1)
+s.women <- subset(sentences.df, women==1 & men!=1)
+# check to make sure there are no words that fit the 'none' or 'both' category
+sum(s.women$both) # 0
+sum(s.women$none) # 0
+sum(s.men$both) # 0
+sum(s.men$none) # 0
 
 # ----------- # now make corpus & look at word freqs # ----------- #
-
 library(tm)
 
-getReaders()
-
-# create a corpus from text and metadata FOR SENTENCES ABOUT MEN
-corpus.men <- VCorpus(DataframeSource(s.men))
-# create a corpus from text and metadata FOR SENTENCES ABOUT WOMEN
-corpus.women <- VCorpus(DataframeSource(s.women))
-
-
-# inspect corpus in diff ways
-class(corpus.men) #just making sure it's a corpus
-inspect(corpus.men[100]) #gives info about only the 100th "document" in corpus
-inspect(corpus.women[1])
-
-# create a corpus with only text in it FOR MEN
-corpus.men.text <- paste(s.men$all, collapse = " ", stringsAsFactors = FALSE)
-corpus.men.textVS <- VectorSource(corpus.men.text)
-c.men <- Corpus(corpus.men.textVS)
-class(c.men)
-
-# create a corpus with only text in it FOR WOMEN
-corpus.women.text <- paste(s.women$all, collapse = " ", stringsAsFactors = FALSE)
-corpus.women.textVS <- VectorSource(corpus.women.text)
-c.women <- Corpus(corpus.women.textVS)
-class(c.women)
+# create a corpus with only text in it for each gender's sentences
+corpus.men <- paste(s.men$all, collapse = " ", stringsAsFactors = FALSE)
+corpus.men <- Corpus(VectorSource(corpus.men))
+corpus.women <- paste(s.women$all, collapse = " ", stringsAsFactors = FALSE)
+corpus.women <- Corpus(VectorSource(corpus.women))
 
 # write only text corpuses to disk
-writeCorpus(c.women, path = "./sentencesOG", filenames = "OGwomen.txt")
-writeCorpus(c.men, path = "./sentencesOG", filenames = "OGmen.txt")
+writeCorpus(corpus.women, path = "./sentences", filenames = "women.txt")
+writeCorpus(corpus.men, path = "./sentences", filenames = "men.txt")
 
-# ------------------------ # look at gender-split corpuses individually # ---------------- #
-getTransformations()
-# FOR MEN
-# m <- tm_map(c.men, content_transformer(tolower)) # already lowercase
-m <- tm_map(c.men, stripWhitespace)
-m <- tm_map(m, removePunctuation)
-m <- tm_map(m, toSpace, "-")
-m <- tm_map(m, toSpace, ":")
-m <- tm_map(m, removeWords, c("url")) #insert words that you want to remove from corpus where "x" is
-m2 <- tm_map(m, removeWords, stopwords("english"))
-m2.stem <- tm_map(m2, stemDocument) #uses tm package stemming
+# # example of writing corpus to disk in .txt format
+# data("crude")
+# str(crude)
+# class(crude)
+# writeCorpus(crude, path = ".",filenames = paste(seq_along(crude), ".txt", sep = ""))
 
-# FOR WOMEN
-# w <- tm_map(c.women, content_transformer(tolower)) # already lowercase
-w <- tm_map(c.women, stripWhitespace)
-w <- tm_map(w, removePunctuation)
-w <- tm_map(w, toSpace, "-")
-w <- tm_map(w, toSpace, ":")
-w <- tm_map(w, removeWords, c("url")) #insert words that you want to remove from corpus where "x" is
-w2 <- tm_map(w, removeWords, stopwords("english"))
-w2.stem <- tm_map(w2, stemDocument) #uses tm package stemming
-
-# export separate text documents for men's sentences and women's sentences
-str(w2.stem)
-str(m2.stem)
-writeCorpus(w2.stem, path = "./sentences", filenames = "women.txt")
-writeCorpus(m2.stem, path = "./sentences", filenames = "men.txt")
-
-# example of writing corpus to disk in .txt format
-data("crude")
-str(crude)
-class(crude)
-writeCorpus(crude, path = ".",filenames = paste(seq_along(crude), ".txt", sep = ""))
-
-# ------------------ # looking at just words, split by gender # ----------------- #
-# make a document term matrix (dtm)
-# FOR MEN
-dtm.men <- DocumentTermMatrix(m) # for original corpus w/o stopwords
-dtm.men.x <- as.matrix(dtm.men)
-dtm.men # gives number of terms in documents 
-
-dtm.men2 <- DocumentTermMatrix(m2) # for original corpus w/o stopwords
-dtm.men2.x <- as.matrix(dtm.men2)
-dtm.men2 # gives number of terms in documents 
-
-dtm.men2.stem <- DocumentTermMatrix(m2.stem) # for original corpus w/o stopwords
-dtm.men2.stem.x <- as.matrix(dtm.men2.stem)
-dtm.men2.stem # gives number of terms in documents 
-
-# FOR WOMEN
-dtm.women <- DocumentTermMatrix(w) # for original corpus w/o stopwords
-dtm.women.x <- as.matrix(dtm.women)
-dtm.women # gives number of terms in documents 
-
-dtm.women2 <- DocumentTermMatrix(w2) # for original corpus w/o stopwords
-dtm.women2.x <- as.matrix(dtm.women2)
-dtm.women2 # gives number of terms in documents 
-
-dtm.women2.stem <- DocumentTermMatrix(w2.stem) # for original corpus w/o stopwords
-dtm.women2.stem.x <- as.matrix(dtm.women2.stem)
-dtm.women2.stem # gives number of terms in documents 
-# FOR MEN
-# find most frequent terms FOR FIRST CORPUS FOR MEN
-freq.men <- colSums(dtm.men.x)
-count.men <- rowSums(dtm.men.x)
-count.men
-#str(freq)
-freq.men <- sort(freq.men, decreasing = TRUE)
-head(freq.men, 30)
-tail(freq.men, 10)
-head(table(freq.men), 30) #shows you a table of frequencies (how many words [bottom row] appear this frequently [top row])
-
-# find most frequent terms FOR SECOND CORPUS FOR MEN
-freq.men2 <- colSums(dtm.men2.x)
-count.men2 <- rowSums(dtm.men2.x)
-count.men2
-#str(freq)
-freq.men2 <- sort(freq.men2, decreasing = TRUE)
-head(freq.men2, 30)
-tail(freq.men2, 10)
-head(table(freq.men2), 30) #shows you a table of frequencies (how many words [bottom row] appear this frequently [top row])
-
-# find most frequent terms FOR THIRD CORPUS FOR MEN
-freq.men2.stem <- colSums(dtm.men2.stem.x)
-count.men2.stem <- rowSums(dtm.men2.stem.x)
-count.men2.stem
-#str(freq)
-freq.men2.stem <- sort(freq.men2.stem, decreasing = TRUE)
-head(freq.men2.stem, 30)
-tail(freq.men2.stem, 10)
-head(table(freq.men2.stem), 30) #shows you a table of frequencies (how many words [bottom row] appear this frequently [top row])
-
-# FOR WOMEN
-# find most frequent terms FOR FIRST CORPUS FOR WOMEN
-freq.women <- colSums(dtm.women.x)
-count.women <- rowSums(dtm.women.x)
-count.women
-#str(freq)
-freq.women <- sort(freq.women, decreasing = TRUE)
-head(freq.women, 30)
-tail(freq.women, 10)
-head(table(freq.women), 30) #shows you a table of frequencies (how many words [bottom row] appear this frequently [top row])
-
-# find most frequent terms FOR SECOND CORPUS FOR women
-freq.women2 <- colSums(dtm.women2.x)
-count.women2 <- rowSums(dtm.women2.x)
-count.women2
-#str(freq)
-freq.women2 <- sort(freq.women2, decreasing = TRUE)
-head(freq.women2, 30)
-tail(freq.women2, 10)
-head(table(freq.women2), 30) #shows you a table of frequencies (how many words [bottom row] appear this frequently [top row])
-
-# find most frequent terms FOR THIRD CORPUS FOR women
-freq.women2.stem <- colSums(dtm.women2.stem.x)
-count.women2.stem <- rowSums(dtm.women2.stem.x)
-count.women2.stem
-#str(freq)
-freq.women2.stem <- sort(freq.women2.stem, decreasing = TRUE)
-head(freq.women2.stem, 30)
-tail(freq.women2.stem, 10)
-head(table(freq.women2.stem), 30) #shows you a table of frequencies (how many words [bottom row] appear this frequently [top row])
-
-
-
-
-library(wordcloud)
-library(RColorBrewer)
-
-# create a wordcloud FOR FIRST CORPUS FOR MEN
-words.men <- names(freq.men)
-wordcloud(words.men[1:100], freq.men[1:100])
-wordcloud(names(freq.men), freq.men, max.words=100) #creates word cloud of words, by frequency (larger text = more), with max of 100 words displayed
-wordcloud(names(freq.men), freq.men, min.freq=600, colors=brewer.pal(8, "Dark2")) #creates word cloud of words, by frequency (larger text = more), with only words that occur 1000+ times
-
-# create a wordcloud FOR SECOND CORPUS FOR MEN
-words.men2 <- names(freq.men2)
-wordcloud(words.men2[1:100], freq.men2[1:100])
-wordcloud(names(freq.men2), freq.men2, max.words=100) #creates word cloud of words, by frequency (larger text = more), with max of 100 words displayed
-wordcloud(names(freq.men2), freq.men2, min.freq=200, colors=brewer.pal(8, "Dark2")) #creates word cloud of words, by frequency (larger text = more), with only words that occur 1000+ times
-
-# create a wordcloud FOR THIRD CORPUS FOR MEN
-words.men2.stem <- names(freq.men2.stem)
-wordcloud(words.men2.stem[1:100], freq.men2.stem[1:100])
-wordcloud(names(freq.men2.stem), freq.men2.stem, max.words=100) #creates word cloud of words, by frequency (larger text = more), with max of 100 words displayed
-wordcloud(names(freq.men2.stem), freq.men2.stem, min.freq=250, colors=brewer.pal(8, "Dark2")) #creates word cloud of words, by frequency (larger text = more), with only words that occur 1000+ times
-
-# DO THE SAME FOR WOMEN
-
-# ------------------- # use OG corpuses, make into one corpus w/ 2 docs # -------------------- #
-install.packages("Rcampdf", repos = "http://datacube.wu.ac.at/", type = "source")
+# ---------------- # use new gendered text files, make into one corpus w/ 2 docs # ------------- #
+# install.packages("Rcampdf", repos = "http://datacube.wu.ac.at/", type = "source")
 library(tm)
 library(SnowballC)
 library(Rcampdf)
 
-# create filepath
-getwd()
+# create a filepath
 fp <- file.path(".", "sentences")
-dir(fp)
+dir(fp) # tells you what files are in the filepath directory
+
+# create a corpus from the files in the filepath
 docs <- Corpus(DirSource(fp))
-summary(docs)
-inspect(docs[1])
 
 # now clean docs, just like before
 docs <- tm_map(docs, content_transformer(tolower))
@@ -536,19 +254,16 @@ docs <- tm_map(docs, toSpace, ":")
 docs <- tm_map(docs, toSpace, "â")
 docs <- tm_map(docs, toSpace, "ã")
 docs <- tm_map(docs, toSpace, "%")
-#docs <- tm_map(docs, removeWords, c("url")) #insert words that you want to remove from corpus where "x" is
-docs <- tm_map(docs, removeWords, stopwords("english"))
-docs <- tm_map(docs, stemDocument) #uses tm package stemming
+docs <- tm_map(docs, removeWords, c("url"))
+docs <- tm_map(docs, removeWords, stopwords("english")) # NEED TO FIX THIS - WANT TO KEEP HE,SHE,ETC.
+docs <- tm_map(docs, stemDocument)
 docs <- tm_map(docs, stripWhitespace)
 docs <- tm_map(docs, PlainTextDocument)
 
 # and create a dtm, just like before
-docs <- Corpus(VectorSource(docs))
 docs.dtm <- DocumentTermMatrix(docs)
-docs.dtm # 34% sparsity, 2 documents, 28,127 terms
-
-docs.dtm.matrix = as.matrix(docs.dtm)
-docs.dtm.df = as.data.frame(docs.dtm.matrix)
+docs.dtm # 34% sparsity, 2 documents, 41,082 terms
+docs.dtm.df = as.data.frame(as.matrix(docs.dtm))
 
 # find most common words in this corpus
 findFreqTerms(docs.dtm, lowfreq=500) # lowest freq = 500 times
@@ -556,27 +271,30 @@ findFreqTerms(docs.dtm, lowfreq=500) # lowest freq = 500 times
 findFreqTerms(docs.dtm[1,], lowfreq=500) # lowest freq = 500 times
 findFreqTerms(docs.dtm[2,], lowfreq=500) # lowest freq = 500 times
 
-# transpose df so columns are docs and rows are words
+# transpose dataframe so columns are docs and rows are words
 docs.dtm.df.t <- t(docs.dtm.df)
 head(docs.dtm.df.t)
+
 # correlate docs
 cor(docs.dtm.df.t)
+
 # cosine docs
 library(lsa)
 cosine(docs.dtm.df.t)
+
 # chi-square test
 chitable <- table(docs.dtm.df.t)
 chisq.test(chitable)
 
 # make dtm less sparse
 docs.dtm.s <- removeSparseTerms(docs.dtm, 0.20) # This makes a matrix that is 20% empty space, maximum.
-docs.dtm.s # 9,159 terms, 2 docs, 0% sparse
+docs.dtm.s # 12,920 terms, 2 docs, 0% sparse
 
+# create dtm in a different way
 # weight matrix by TdIdf
 terms <-DocumentTermMatrix(docs,control=list(weighting=function(x) weightTfIdf(x,normalize=FALSE)))
-terms # 2 docs, 28,127 terms, 66% sparse
-terms.matrix <- as.matrix(terms)
-terms.df <- as.data.frame(terms.matrix)
+terms # 2 docs, 41,082 terms, 66% sparse
+terms.df <- as.data.frame(as.matrix(terms))
 terms.df.t <- t(terms.df)
 
 # find rarest words by doc
@@ -586,7 +304,7 @@ findFreqTerms(terms[1,], lowfreq=40)
 findFreqTerms(terms[2,], lowfreq=40)
 
 # develop relative frequencies, thx Neal Caren
-summing = function(x) x/sum(x, na.rm=T)
+summing <- function(x) x/sum(x, na.rm=T)
 docs.dtm.df.t_new <- apply(docs.dtm.df.t, 2, summing)
 head(docs.dtm.df.t_new) # this is good stuff
 
