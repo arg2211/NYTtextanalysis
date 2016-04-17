@@ -271,6 +271,41 @@ findFreqTerms(docs.dtm, lowfreq=500) # lowest freq = 500 times
 findFreqTerms(docs.dtm[1,], lowfreq=500) # lowest freq = 500 times
 findFreqTerms(docs.dtm[2,], lowfreq=500) # lowest freq = 500 times
 
+# find associations with words
+findAssocs(docs.dtm, "mother", 0.9)
+
+# for docs
+freq.docs <- colSums(docs.dtm.df)
+freq.docs <- sort(freq.docs, decreasing = TRUE)
+head(freq.docs, 30) # gives top 30 most used words
+count.docs <- rowSums(docs.dtm.df)
+count.docs #
+
+# separate into in docs.m and docs.w
+rownames(docs.dtm.df) = c("men","women")
+docs.m <- docs.dtm.df[1,]
+docs.w <- docs.dtm.df[2,]
+
+freq.docs.m <- colSums(docs.m)
+freq.docs.m <- sort(freq.docs.m, decreasing = TRUE)
+head(freq.docs.m, 30) # gives top 30 most used words
+count.docs.m <- rowSums(docs.m)
+count.docs.m # 276,357
+
+freq.docs.w <- colSums(docs.w)
+freq.docs.w <- sort(freq.docs.w, decreasing = TRUE)
+head(freq.docs.w, 30) # gives top 30 most used words
+count.docs.w <- rowSums(docs.w)
+count.docs.w # 91,989
+
+
+# for fun, create word clouds
+library(wordcloud)
+wordcloud(names(freq.docs), freq.docs, min.freq=300, colors=brewer.pal(8, "Dark2"), random.order = FALSE)
+wordcloud(names(freq.docs.m), freq.docs, min.freq=300, colors=brewer.pal(8, "Dark2"), random.order = FALSE)
+wordcloud(names(freq.docs.w), freq.docs, min.freq=300, colors=brewer.pal(8, "Dark2"), random.order = FALSE)
+
+
 # transpose dataframe so columns are docs and rows are words
 docs.dtm.df.t <- t(docs.dtm.df)
 head(docs.dtm.df.t)
@@ -286,10 +321,29 @@ cosine(docs.dtm.df.t)
 chitable <- table(docs.dtm.df.t)
 chisq.test(chitable)
 
+# ----------------- # less sparse dtm # ---------------- #
 # make dtm less sparse
 docs.dtm.s <- removeSparseTerms(docs.dtm, 0.20) # This makes a matrix that is 20% empty space, maximum.
-docs.dtm.s # 12,920 terms, 2 docs, 0% sparse
+docs.dtm.s # 9,219 terms, 2 docs, 0% sparse
 
+# transpose dataframe so columns are docs and rows are words
+docs.dtm.s.df <- as.data.frame(as.matrix(docs.dtm.s))
+docs.dtm.s.df.t <- t(docs.dtm.s.df)
+head(docs.dtm.s.df.t)
+
+# correlate docs
+cor(docs.dtm.s.df.t)
+
+# cosine docs
+library(lsa)
+cosine(docs.dtm.s.df.t)
+
+# chi-square test
+chitable2 <- table(docs.dtm.s.df.t)
+chisq.test(chitable2)
+
+
+# ----------------- # new # ------------------ #
 # create dtm in a different way
 # weight matrix by TdIdf
 terms <-DocumentTermMatrix(docs,control=list(weighting=function(x) weightTfIdf(x,normalize=FALSE)))
@@ -322,3 +376,4 @@ sort.men[1:15, ]
 docs.dtm.df.t_new$ratio = docs.dtm.df.t_new$men - docs.dtm.df.t_new$women
 sort.women <- docs.dtm.df.t_new[order(docs.dtm.df.t_new$ratio) , ]
 sort.women[1:15, ]
+
