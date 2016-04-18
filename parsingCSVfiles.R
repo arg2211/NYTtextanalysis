@@ -204,6 +204,11 @@ sum(sentences.df$both) # 2,544 sentences that contain words about both men and w
 sum(sentences.df$men) # 23,111 sentences that contain a 'man' word
 sum(sentences.df$women) # 9,511 sentences that contain a 'woman' word
 
+# testing if proportion of man-sentences:all-sentences is significantly 
+# different from woman-sentences:all-sentences
+t.test(sentences.df$men,sentences.df$women)
+prop.test(x=c(23111,9511),n=c(86315,86315))
+
 # create subsets of sentences only about 'men' and only about 'women'
 s.men <- subset(sentences.df, men==1 & women!=1)
 s.women <- subset(sentences.df, women==1 & men!=1)
@@ -244,6 +249,7 @@ dir(fp) # tells you what files are in the filepath directory
 
 # create a corpus from the files in the filepath
 docs <- Corpus(DirSource(fp))
+docs2 <- Corpus(DirSource(fp))
 
 # now clean docs, just like before
 docs <- tm_map(docs, content_transformer(tolower))
@@ -259,11 +265,30 @@ docs <- tm_map(docs, removeWords, stopwords("english")) # NEED TO FIX THIS - WAN
 docs <- tm_map(docs, stemDocument)
 docs <- tm_map(docs, stripWhitespace)
 docs <- tm_map(docs, PlainTextDocument)
+# for docs2 - DO NOT REMOVE STOPWORDS
+docs2 <- tm_map(docs2, content_transformer(tolower))
+docs2 <- tm_map(docs2, removePunctuation)
+docs2 <- tm_map(docs2, removeNumbers)
+docs2 <- tm_map(docs2, toSpace, "-")
+docs2 <- tm_map(docs2, toSpace, ":")
+docs2 <- tm_map(docs2, toSpace, "â")
+docs2 <- tm_map(docs2, toSpace, "ã")
+docs2 <- tm_map(docs2, toSpace, "%")
+docs2 <- tm_map(docs2, toSpace, ",")
+docs2 <- tm_map(docs2, stemDocument)
+docs2 <- tm_map(docs2, stripWhitespace)
+docs2 <- tm_map(docs2, PlainTextDocument)
 
 # and create a dtm, just like before
 docs.dtm <- DocumentTermMatrix(docs)
-docs.dtm # 34% sparsity, 2 documents, 41,082 terms
+docs.dtm # 34% sparsity, 2 documents, 28,341 terms
 docs.dtm.df = as.data.frame(as.matrix(docs.dtm))
+# for docs2
+docs2.dtm <- DocumentTermMatrix(docs2)
+docs2.dtm # 34% sparsity, 2 documents, 28,414 terms
+docs2.dtm[1,] #23,586 non-sparse + 4,828 sparse terms for men
+docs2.dtm[2,] #14,121 non-sparse + 14,293 sparse terms for women
+docs2.dtm.df = as.data.frame(as.matrix(docs2.dtm))
 
 # find most common words in this corpus
 findFreqTerms(docs.dtm, lowfreq=500) # lowest freq = 500 times
@@ -281,10 +306,19 @@ head(freq.docs, 30) # gives top 30 most used words
 count.docs <- rowSums(docs.dtm.df)
 count.docs #
 
+# for docs2
+freq.docs2 <- colSums(docs2.dtm.df)
+freq.docs2 <- sort(freq.docs2, decreasing = TRUE)
+head(freq.docs2, 30) # gives top 30 most used words
+count.docs2 <- rowSums(docs2.dtm.df)
+count.docs2 #
+
 # separate into in docs.m and docs.w
 rownames(docs.dtm.df) = c("men","women")
 docs.m <- docs.dtm.df[1,]
+docs.m <- sort(docs.m, decreasing = TRUE)
 docs.w <- docs.dtm.df[2,]
+docs.w <- sort(docs.w, decreasing = TRUE)
 
 freq.docs.m <- colSums(docs.m)
 freq.docs.m <- sort(freq.docs.m, decreasing = TRUE)
@@ -298,28 +332,52 @@ head(freq.docs.w, 30) # gives top 30 most used words
 count.docs.w <- rowSums(docs.w)
 count.docs.w # 91,989
 
+# separate into in docs2.m and docs2.w
+rownames(docs2.dtm.df) = c("men","women")
+docs2.m <- docs2.dtm.df[1,]
+docs2.m <- sort(docs2.m, decreasing = TRUE)
+docs2.w <- docs2.dtm.df[2,]
+docs2.w <- sort(docs2.w, decreasing = TRUE)
+
+freq.docs2.m <- colSums(docs2.m)
+freq.docs2.m <- sort(freq.docs2.m, decreasing = TRUE)
+head(freq.docs2.m, 30) # gives top 30 most used words
+count.docs2.m <- rowSums(docs2.m)
+count.docs2.m # 388,336
+
+freq.docs2.w <- colSums(docs2.w)
+freq.docs2.w <- sort(freq.docs2.w, decreasing = TRUE)
+head(freq.docs2.w, 30) # gives top 30 most used words
+count.docs2.w <- rowSums(docs2.w)
+count.docs2.w # 131,375
 
 # for fun, create word clouds
 library(wordcloud)
 wordcloud(names(freq.docs), freq.docs, min.freq=300, colors=brewer.pal(8, "Dark2"), random.order = FALSE)
-wordcloud(names(freq.docs.m), freq.docs, min.freq=300, colors=brewer.pal(8, "Dark2"), random.order = FALSE)
-wordcloud(names(freq.docs.w), freq.docs, min.freq=300, colors=brewer.pal(8, "Dark2"), random.order = FALSE)
-
+wordcloud(names(freq.docs.m), freq.docs.m, min.freq=300, colors=brewer.pal(8, "Dark2"), random.order = FALSE)
+wordcloud(names(freq.docs.w), freq.docs.w, min.freq=120, colors=brewer.pal(8, "Dark2"), random.order = FALSE)
 
 # transpose dataframe so columns are docs and rows are words
-docs.dtm.df.t <- t(docs.dtm.df)
-head(docs.dtm.df.t)
+docs.tdm.df <- t(docs.dtm.df)
+head(docs.tdm.df)
+docs2.tdm.df <- t(docs2.dtm.df)
+head(docs2.tdm.df)
 
 # correlate docs
-cor(docs.dtm.df.t)
+cor(docs.tdm.df)
+cor(docs2.tdm.df)
 
 # cosine docs
 library(lsa)
-cosine(docs.dtm.df.t)
+cosine(docs.tdm.df)
+cosine(docs2.tdm.df)
 
 # chi-square test
-chitable <- table(docs.dtm.df.t)
+chitable <- table(docs.tdm.df)
 chisq.test(chitable)
+chitable3 <- table(docs2.tdm.df)
+chisq.test(chitable3)
+
 
 # ----------------- # less sparse dtm # ---------------- #
 # make dtm less sparse
@@ -377,3 +435,108 @@ docs.dtm.df.t_new$ratio = docs.dtm.df.t_new$men - docs.dtm.df.t_new$women
 sort.women <- docs.dtm.df.t_new[order(docs.dtm.df.t_new$ratio) , ]
 sort.women[1:15, ]
 
+# ------------------ # n-grams # ---------------------- #
+install.packages("RWeka")
+require(RWeka)
+library(tm)
+
+#data("crude")
+
+BigramTokenizer <- function(x) NGramTokenizer(x, Weka_control(min = 2, max = 2))
+TrigramTokenizer <- function(x) NGramTokenizer(x, Weka_control(min = 3, max = 3))
+
+
+# for docs (no stopwords)
+docs.tdm.bi <- TermDocumentMatrix(docs, control = list(tokenize = BigramTokenizer))
+docs.tdm.bi
+inspect(docs.tdm.bi[10000:10010, ])
+
+docs.tdm.tri <- TermDocumentMatrix(docs, control = list(tokenize = TrigramTokenizer))
+docs.tdm.tri
+inspect(docs.tdm.tri[200:210, ])
+docs.tdm.tri.s <- removeSparseTerms(docs.tdm.tri, 0.40)
+docs.tdm.tri.s
+inspect(docs.tdm.tri.s[200:210, ])
+
+# for docs2 (with stopwords)
+docs2.tdm.bi <- TermDocumentMatrix(docs2, control = list(tokenize = BigramTokenizer))
+docs2.tdm.bi
+inspect(docs2.tdm.bi[104100:104110, ])
+
+docs2.tdm.bi.df <- as.data.frame(as.matrix(docs2.tdm.bi))
+colnames(docs2.tdm.bi.df) <- c("men","women")
+
+count.bi <- colSums(docs2.tdm.bi.df)
+count.bi # 490,282 bigrams for men + 160,870 bigrams for women
+freq.bi <- rowSums(docs2.tdm.bi.df)
+freq.bi <- sort(freq.bi, decreasing = TRUE)
+head(freq.bi, 30) # gives top 30 most used words
+
+docs2.tdm.tri <- TermDocumentMatrix(docs2, control = list(tokenize = TrigramTokenizer))
+docs2.tdm.tri
+inspect(docs2.tdm.tri[200:210, ])
+
+docs2.tdm.tri.df <- as.data.frame(as.matrix(docs2.tdm.tri))
+colnames(docs2.tdm.tri.df) <- c("men","women")
+
+count.tri <- colSums(docs2.tdm.tri.df)
+count.tri # 490,281 trigrams for men + 160,869 trigrams for women
+freq.tri <- rowSums(docs2.tdm.tri.df)
+freq.tri <- sort(freq.tri, decreasing = TRUE)
+head(freq.tri, 30) # gives top 30 most used words
+
+# docs2.tdm.tri.s <- removeSparseTerms(docs2.tdm.tri, 0.40)
+# docs2.tdm.tri.s
+# inspect(docs2.tdm.tri.s[200:210, ])
+
+# find most frequent bigrams for men
+findFreqTerms(docs2.tdm[,1], lowfreq=400) # lowest freq = 400/
+# find most frequent bigrams for women
+findFreqTerms(docs2.tdm[,2], lowfreq=400) # lowest freq = 500 times
+
+# ------------------ # find proportion of specific n-grams # ------------------- #
+count(docs.w[,"said"])
+
+count(docs2.tdm.bi.df["he said", 1]) #1790
+count(docs2.tdm.bi.df["he say", 1]) #58
+count(docs2.tdm.bi.df["they said", 1]) #15
+count(docs2.tdm.bi.df["they say", 1]) #21
+
+count(docs2.tdm.bi.df["was said", 1]) #12
+count(docs2.tdm.bi.df["been said", 1]) #1
+count(docs2.tdm.bi.df["is said", 1]) #9
+count(docs2.tdm.bi.df["it said", 1]) #19
+count(docs2.tdm.bi.df["be said", 1]) #4
+count(docs2.tdm.bi.df["were said", 1]) #1
+count(docs2.tdm.bi.df["?", 1])
+
+# 490,282 bigrams for men + 160,870 bigrams for women
+# he said vs she said
+prop.test(x=c(1790,634),n=c(490282,160870))
+# he say vs she say
+prop.test(x=c(58,29),n=c(490282,160870))
+# was/is/been/it/be said in men vs women
+prop.test(x=c((12+1+9+19+4+1),(1+1+1+3+1+1)),n=c(490282,160870))
+# 
+
+count(docs2.tdm.bi.df["she said", 2]) #634
+count(docs2.tdm.bi.df["she say", 2]) #29
+count(docs2.tdm.bi.df["they said", 2]) #5
+count(docs2.tdm.bi.df["they say", 2]) #6
+count(docs2.tdm.bi.df["has said", 2]) #8
+count(docs2.tdm.bi.df["had said", 2]) #1
+count(docs2.tdm.bi.df["have said", 2]) #3
+count(docs2.tdm.bi.df["is say", 2]) #1
+count(docs2.tdm.bi.df["are say", 2]) #2
+count(docs2.tdm.bi.df["will say", 2]) #0
+count(docs2.tdm.bi.df["was say", 2]) #0
+count(docs2.tdm.bi.df["were say", 2]) #1
+count(docs2.tdm.bi.df["been say", 2]) #1
+
+count(docs2.tdm.bi.df["was said", 2]) #1
+count(docs2.tdm.bi.df["been said", 2]) #1
+count(docs2.tdm.bi.df["is said", 2]) #1
+count(docs2.tdm.bi.df["it said", 2]) #3
+count(docs2.tdm.bi.df["be said", 2]) #1
+count(docs2.tdm.bi.df["were said", 2]) #1
+count(docs2.tdm.bi.df["?", 2])
