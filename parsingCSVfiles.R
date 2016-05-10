@@ -5,8 +5,6 @@ setwd("~/GitHub/NYTtextanalysis/data/random2015dates")
 options(stringsAsFactors = FALSE)
 
 # ----------------------- # clean .csv files and combine into one data frame # --------------------------- #
-library(tm)
-
 # load .csv file containing text and metadata
 # (created with my edited version of Neal Caren's Python script split_ln.py)
 nyt01 <- read.csv('nyt01-02-15.csv', header = TRUE, stringsAsFactors = FALSE)
@@ -117,6 +115,7 @@ otc2 <- tm_map(otc2, removeNumbers)
 otc2 <- tm_map(otc2, toSpace, "-")
 otc2 <- tm_map(otc2, toSpace, ":")
 otc2 <- tm_map(otc2, toSpace, "%")
+otc2 <- tm_map(otc2, toSpace, ",")
 otc2 <- tm_map(otc2, removeWords, stopwords("english"))
 otc2 <- tm_map(otc2, removeWords, c("url")) #insert words that you want to remove from corpus where "x" is
 otc2 <- tm_map(otc2, stripWhitespace)
@@ -162,7 +161,11 @@ library(wordcloud)
 library(RColorBrewer)
 # create word cloud by frequency with only words that occur 1000+ times
 # the larger the font, the more the word occurs
-wordcloud(names(freq.otcstem), freq.otcstem, min.freq=1000, colors=brewer.pal(8, "Dark2"), random.order = FALSE) 
+wordcloud(names(freq.otcstem), freq.otcstem, min.freq=900, colors=brewer.pal(8, "Dark2"), random.order = FALSE) 
+
+wordcloud(names(freq.otc), freq.otc, min.freq = 600, colors = brewer.pal(8, "Dark2"), random.order = FALSE)
+
+wordcloud(names(freq.otc2), freq.otc2, min.freq = 600, colors = brewer.pal(8, "Dark2"), random.order = FALSE)
 
 
 # ------------------------------ # split by sentences # --------------------------------- #
@@ -176,38 +179,32 @@ sentences <- toLower(sentences, keepAcronyms = FALSE) # make all sentences lower
 sentences.df <- as.data.frame(unlist(sentences)) # create dataframe of lowercase sentences
 colnames(sentences.df) = c("all") # rename column in dataframe to "all"
 
-# use grepl / regex to categorize sentences by gender
-# NEED TO ADD POSSESSIVES
-# if any of these words appear in a sentence, assign "1" to new variable 'men'
-sentences.df$men <- ifelse(grepl("\\b(guys?|spokesm[ae]n|chairm[ae]n|m[ae]n
-|him|he|his|boys?|boyfriends?|brothers?|dads?|dudes?|fathers?|gentlem[ae]n|gods?
-|grandfathers?|grandpas?|grandsons?|grooms?|himself|hisself|husbands?|kings?|males?
-|mr|nephews?|priests?|princes?|sons?|uncles?|widowers?)\\b", 
-                                       sentences.df$all, ignore.case = TRUE), 1, 0)
+# clean sentences a bit by removing punctuation and numbers
+sentences.df <- as.data.frame(apply(sentences.df, 2, function(y) gsub("'", "", y)))
+sentences.df <- as.data.frame(apply(sentences.df, 2, function(y) gsub(",", "", y)))
+sentences.df <- as.data.frame(apply(sentences.df, 2, function(y) gsub("^false", "", y)))
 
-# COME BACK TO THIS - WANT TO ACCOUNT FOR APOSTRPHES - |he\\'s|dad\\'s|father\\'s|gentlem[ae]n\\'s
+# use grepl / regex to categorize sentences by gender
+# if any of these words appear in a sentence, assign "1" to new variable 'men'
+sentences.df$men <- ifelse(grepl("\\b(guys?|spokesm[ae]ns?|chairm[ae]ns?|m[ae]ns?|congressm[ae]ns?|him|hes?|his|boys?|boyfriends?|brothers?|dads?|dudes?|fathers?|gentlem[ae]ns?|gods?|grandfathers?|grandpas?|grandsons?|grooms?|groomsmen|himself|hisself|husbands?|kings?|males?|mr|mr.|nephews?|priests?|princes?|sons?|uncles?|widowers?)\\b", sentences.df$all, ignore.case = TRUE), 1, 0)
 
 # if any of these words appear in a sentence, assign "1" to new variable 'women'
-sentences.df$women <- ifelse(grepl("\\b(heroines?|spokeswom[ae]n|chairwom[ae]n
-|wom[ae]n|actress|actresses|she|her|aunts?|brides?|daughters?|females?|girls?|girlfriends?
-|goddess|goddesses|granddaughters?|grandmas?|grandmothers?|herself|ladies|lady|moms?
-|mothers?|mrs|ms|nieces?|priestess|priestesses|princess|princesses|queens?|sisters?
-|waitress|waitresses|widows?|wife|wives)\\b",
-                                         sentences.df$all, ignore.case = TRUE), 1, 0)
+sentences.df$women <- ifelse(grepl("\\b(heroines?|spokeswom[ae]ns?|chairwom[ae]ns?|congresswom[ae]ns?|wom[ae]ns?|actresss?|actresses|shes?|her|aunts?|brides?|daughters?|females?|girls?|girlfriends?|goddesss?|goddesses|granddaughters?|grandmas?|grandmothers?|herself|ladies|ladys?|moms?|mothers?|mrs|mrs.|ms|ms.|nieces?|priestesss?|priestesses|princesss?|princesses|queens?|sisters?|waitresss?|waitresses|widows?|wifes?|wives)\\b", sentences.df$all, ignore.case = TRUE), 1, 0)
+
 # create new variables 'both' and 'none' from previous variables 'men' and 'women'
 sentences.df$both <- ifelse((sentences.df$men==1 & sentences.df$women==1), 1, 0)
 sentences.df$none <- ifelse((sentences.df$men==0 & sentences.df$women==0), 1, 0)
 
 # count number of sentences that fall into each category
-sum(sentences.df$none) # 56,237 sentences that are about neither men nor women
-sum(sentences.df$both) # 2,544 sentences that contain words about both men and women
-sum(sentences.df$men) # 23,111 sentences that contain a 'man' word
-sum(sentences.df$women) # 9,511 sentences that contain a 'woman' word
+sum(sentences.df$none) # 55,422 sentences that are about neither men nor women
+sum(sentences.df$both) # 3,064 sentences that contain words about both men and women
+sum(sentences.df$men) # 24,233 sentences that contain a 'man' word
+sum(sentences.df$women) # 9,724 sentences that contain a 'woman' word
 
 # testing if proportion of man-sentences:all-sentences is significantly 
 # different from woman-sentences:all-sentences
 t.test(sentences.df$men,sentences.df$women)
-prop.test(x=c(23111,9511),n=c(86315,86315))
+prop.test(x=c(24233,9724),n=c(86315,86315))
 
 # create subsets of sentences only about 'men' and only about 'women'
 s.men <- subset(sentences.df, men==1 & women!=1)
@@ -260,7 +257,7 @@ docs <- tm_map(docs, toSpace, ":")
 docs <- tm_map(docs, toSpace, "â")
 docs <- tm_map(docs, toSpace, "ã")
 docs <- tm_map(docs, toSpace, "%")
-docs <- tm_map(docs, removeWords, c("url"))
+docs <- tm_map(docs, removeWords, c("url", "false"))
 docs <- tm_map(docs, removeWords, stopwords("english")) # NEED TO FIX THIS - WANT TO KEEP HE,SHE,ETC.
 docs <- tm_map(docs, stemDocument)
 docs <- tm_map(docs, stripWhitespace)
@@ -275,26 +272,27 @@ docs2 <- tm_map(docs2, toSpace, "â")
 docs2 <- tm_map(docs2, toSpace, "ã")
 docs2 <- tm_map(docs2, toSpace, "%")
 docs2 <- tm_map(docs2, toSpace, ",")
+docs2 <- tm_map(docs2, removeWords, c("url", "false"))
 docs2 <- tm_map(docs2, stemDocument)
 docs2 <- tm_map(docs2, stripWhitespace)
 docs2 <- tm_map(docs2, PlainTextDocument)
 
 # and create a dtm, just like before
 docs.dtm <- DocumentTermMatrix(docs)
-docs.dtm # 34% sparsity, 2 documents, 28,341 terms
+docs.dtm # 34% sparsity, 2 documents, 28,574 terms
 docs.dtm.df = as.data.frame(as.matrix(docs.dtm))
 # for docs2
 docs2.dtm <- DocumentTermMatrix(docs2)
-docs2.dtm # 34% sparsity, 2 documents, 28,414 terms
-docs2.dtm[1,] #23,586 non-sparse + 4,828 sparse terms for men
-docs2.dtm[2,] #14,121 non-sparse + 14,293 sparse terms for women
+docs2.dtm # 34% sparsity, 2 documents, 28,644 terms
+docs2.dtm[1,] #24,083 non-sparse + 4,561 sparse terms for men
+docs2.dtm[2,] #13,674 non-sparse + 14,970 sparse terms for women
 docs2.dtm.df = as.data.frame(as.matrix(docs2.dtm))
 
 # find most common words in this corpus
 findFreqTerms(docs.dtm, lowfreq=500) # lowest freq = 500 times
 # find most common words in each doc
 findFreqTerms(docs.dtm[1,], lowfreq=500) # lowest freq = 500 times
-findFreqTerms(docs.dtm[2,], lowfreq=500) # lowest freq = 500 times
+findFreqTerms(docs.dtm[2,], lowfreq=200) # lowest freq = 500 times
 
 # find associations with words
 findAssocs(docs.dtm, "mother", 0.9)
@@ -304,14 +302,14 @@ freq.docs <- colSums(docs.dtm.df)
 freq.docs <- sort(freq.docs, decreasing = TRUE)
 head(freq.docs, 30) # gives top 30 most used words
 count.docs <- rowSums(docs.dtm.df)
-count.docs #
+count.docs #263,656 words in sentences about men & 79,442 words in sentences about women
 
 # for docs2
 freq.docs2 <- colSums(docs2.dtm.df)
 freq.docs2 <- sort(freq.docs2, decreasing = TRUE)
 head(freq.docs2, 30) # gives top 30 most used words
 count.docs2 <- rowSums(docs2.dtm.df)
-count.docs2 #
+count.docs2 #378,667 words in sentences about men & 116,311 words in sentences about women
 
 # separate into in docs.m and docs.w
 rownames(docs.dtm.df) = c("men","women")
@@ -324,13 +322,17 @@ freq.docs.m <- colSums(docs.m)
 freq.docs.m <- sort(freq.docs.m, decreasing = TRUE)
 head(freq.docs.m, 30) # gives top 30 most used words
 count.docs.m <- rowSums(docs.m)
-count.docs.m # 276,357
+count.docs.m # 263,656
 
 freq.docs.w <- colSums(docs.w)
 freq.docs.w <- sort(freq.docs.w, decreasing = TRUE)
 head(freq.docs.w, 30) # gives top 30 most used words
 count.docs.w <- rowSums(docs.w)
-count.docs.w # 91,989
+count.docs.w # 79,442
+
+# test to see if number of sentences:words differs for men and women
+# for docs
+prop.test(x=c(24233,9724),n=c(263656,79442))
 
 # separate into in docs2.m and docs2.w
 rownames(docs2.dtm.df) = c("men","women")
@@ -343,19 +345,23 @@ freq.docs2.m <- colSums(docs2.m)
 freq.docs2.m <- sort(freq.docs2.m, decreasing = TRUE)
 head(freq.docs2.m, 30) # gives top 30 most used words
 count.docs2.m <- rowSums(docs2.m)
-count.docs2.m # 388,336
+count.docs2.m #378,667
 
 freq.docs2.w <- colSums(docs2.w)
 freq.docs2.w <- sort(freq.docs2.w, decreasing = TRUE)
 head(freq.docs2.w, 30) # gives top 30 most used words
 count.docs2.w <- rowSums(docs2.w)
-count.docs2.w # 131,375
+count.docs2.w #116,311
+
+# test to see if number of sentences:words differs for men and women
+# for docs2
+prop.test(x=c(24233,9724),n=c(378667,116311))
 
 # for fun, create word clouds
 library(wordcloud)
 wordcloud(names(freq.docs), freq.docs, min.freq=300, colors=brewer.pal(8, "Dark2"), random.order = FALSE)
 wordcloud(names(freq.docs.m), freq.docs.m, min.freq=300, colors=brewer.pal(8, "Dark2"), random.order = FALSE)
-wordcloud(names(freq.docs.w), freq.docs.w, min.freq=120, colors=brewer.pal(8, "Dark2"), random.order = FALSE)
+wordcloud(names(freq.docs.w), freq.docs.w, min.freq=100, colors=brewer.pal(8, "Dark2"), random.order = FALSE)
 
 # transpose dataframe so columns are docs and rows are words
 docs.tdm.df <- t(docs.dtm.df)
@@ -405,9 +411,13 @@ chisq.test(chitable2)
 # create dtm in a different way
 # weight matrix by TdIdf
 terms <-DocumentTermMatrix(docs,control=list(weighting=function(x) weightTfIdf(x,normalize=FALSE)))
-terms # 2 docs, 41,082 terms, 66% sparse
+terms # 2 docs, 66% sparse
 terms.df <- as.data.frame(as.matrix(terms))
-terms.df.t <- t(terms.df)
+terms.t <- t(terms.df)
+
+terms.t.df <- as.data.frame(terms.t)
+colnames(terms.t.df) = c("men","women")
+terms.t.df$total <- terms.t.df$men + terms.t.df$women
 
 # find rarest words by doc
 # words most uniquely associated with men
@@ -417,11 +427,17 @@ findFreqTerms(terms[2,], lowfreq=40)
 
 # develop relative frequencies, thx Neal Caren
 summing <- function(x) x/sum(x, na.rm=T)
-docs.dtm.df.t_new <- apply(docs.dtm.df.t, 2, summing)
+docs.dtm.df.t_new <- apply(terms.t, 2, summing)
+colnames(docs.dtm.df.t_new) = c("men","women")
 head(docs.dtm.df.t_new) # this is good stuff
 
 # more on relative freq's ...
 docs.dtm.df.t_new <- as.data.frame(docs.dtm.df.t_new)
+docs.dtm.df.t_new$menP <- docs.dtm.df.t_new$men*100
+docs.dtm.df.t_new$womenP <- docs.dtm.df.t_new$women*100
+# there are literally NO words that these sentences have in common (excluding stopwords)
+docs.dtm.df.t_new$shared <- ifelse(docs.dtm.df.t_new$men!=0 & docs.dtm.df.t_new$women!=0, 1, 0)
+
 names(docs.dtm.df.t_new)[names(docs.dtm.df.t_new)=="1"] <- "men"
 names(docs.dtm.df.t_new)[names(docs.dtm.df.t_new)=="2"] <- "women"
 
@@ -436,7 +452,6 @@ sort.women <- docs.dtm.df.t_new[order(docs.dtm.df.t_new$ratio) , ]
 sort.women[1:15, ]
 
 # ------------------ # n-grams # ---------------------- #
-install.packages("RWeka")
 require(RWeka)
 library(tm)
 
@@ -450,13 +465,41 @@ TrigramTokenizer <- function(x) NGramTokenizer(x, Weka_control(min = 3, max = 3)
 docs.tdm.bi <- TermDocumentMatrix(docs, control = list(tokenize = BigramTokenizer))
 docs.tdm.bi
 inspect(docs.tdm.bi[10000:10010, ])
+docs.tdm.bi.df <- as.data.frame(as.matrix(docs.tdm.bi))
+colnames(docs.tdm.bi.df) <- c("men","women")
+
+count.bi <- colSums(docs.tdm.bi.df)
+count.bi # 275,489 bigrams for men + 82,310 bigrams for women
+freq.bi <- rowSums(docs.tdm.bi.df)
+freq.bi <- sort(freq.bi, decreasing = TRUE)
+head(freq.bi, 30) # gives top 30 most used words
 
 docs.tdm.tri <- TermDocumentMatrix(docs, control = list(tokenize = TrigramTokenizer))
 docs.tdm.tri
 inspect(docs.tdm.tri[200:210, ])
-docs.tdm.tri.s <- removeSparseTerms(docs.tdm.tri, 0.40)
-docs.tdm.tri.s
-inspect(docs.tdm.tri.s[200:210, ])
+#docs.tdm.tri.s <- removeSparseTerms(docs.tdm.tri, 0.40)
+#docs.tdm.tri.s
+#inspect(docs.tdm.tri.s[200:210, ])
+docs.tdm.tri.df <- as.data.frame(as.matrix(docs.tdm.tri))
+colnames(docs.tdm.tri.df) <- c("men","women")
+
+count.tri <- colSums(docs.tdm.tri.df)
+count.tri # 275,488 trigrams for men + 82,309 trigrams for women
+freq.tri <- rowSums(docs.tdm.tri.df)
+freq.tri <- sort(freq.tri, decreasing = TRUE)
+head(freq.tri, 30) # gives top 30 most used words
+
+# find most frequent bigrams for men
+findFreqTerms(docs.tdm.bi[,1], lowfreq=100) # lowest freq = 400/
+# find most frequent bigrams for women
+findFreqTerms(docs.tdm.bi[,2], lowfreq=30)
+
+# find most frequent trigrams for men
+findFreqTerms(docs.tdm.tri[,1], lowfreq=30)
+# find most frequent trigrams for women
+findFreqTerms(docs.tdm.tri[,2], lowfreq=10) 
+
+
 
 # for docs2 (with stopwords)
 docs2.tdm.bi <- TermDocumentMatrix(docs2, control = list(tokenize = BigramTokenizer))
@@ -466,11 +509,11 @@ inspect(docs2.tdm.bi[104100:104110, ])
 docs2.tdm.bi.df <- as.data.frame(as.matrix(docs2.tdm.bi))
 colnames(docs2.tdm.bi.df) <- c("men","women")
 
-count.bi <- colSums(docs2.tdm.bi.df)
-count.bi # 490,282 bigrams for men + 160,870 bigrams for women
-freq.bi <- rowSums(docs2.tdm.bi.df)
-freq.bi <- sort(freq.bi, decreasing = TRUE)
-head(freq.bi, 30) # gives top 30 most used words
+count2.bi <- colSums(docs2.tdm.bi.df)
+count2.bi # 483,230 bigrams for men + 144,159 bigrams for women
+freq2.bi <- rowSums(docs2.tdm.bi.df)
+freq2.bi <- sort(freq2.bi, decreasing = TRUE)
+head(freq2.bi, 30) # gives top 30 most used words
 
 docs2.tdm.tri <- TermDocumentMatrix(docs2, control = list(tokenize = TrigramTokenizer))
 docs2.tdm.tri
@@ -479,48 +522,55 @@ inspect(docs2.tdm.tri[200:210, ])
 docs2.tdm.tri.df <- as.data.frame(as.matrix(docs2.tdm.tri))
 colnames(docs2.tdm.tri.df) <- c("men","women")
 
-count.tri <- colSums(docs2.tdm.tri.df)
-count.tri # 490,281 trigrams for men + 160,869 trigrams for women
-freq.tri <- rowSums(docs2.tdm.tri.df)
-freq.tri <- sort(freq.tri, decreasing = TRUE)
-head(freq.tri, 30) # gives top 30 most used words
+count2.tri <- colSums(docs2.tdm.tri.df)
+count2.tri # 483,229 trigrams for men + 144,158 trigrams for women
+freq2.tri <- rowSums(docs2.tdm.tri.df)
+freq2.tri <- sort(freq2.tri, decreasing = TRUE)
+head(freq2.tri, 30) # gives top 30 most used words
 
 # docs2.tdm.tri.s <- removeSparseTerms(docs2.tdm.tri, 0.40)
 # docs2.tdm.tri.s
 # inspect(docs2.tdm.tri.s[200:210, ])
 
 # find most frequent bigrams for men
-findFreqTerms(docs2.tdm[,1], lowfreq=400) # lowest freq = 400/
+findFreqTerms(docs2.tdm.bi[,1], lowfreq=400) # lowest freq = 400/
 # find most frequent bigrams for women
-findFreqTerms(docs2.tdm[,2], lowfreq=400) # lowest freq = 500 times
+findFreqTerms(docs2.tdm.bi[,2], lowfreq=100)
+
+# find most frequent trigrams for men
+findFreqTerms(docs2.tdm.tri[,1], lowfreq=80)
+# find most frequent trigrams for women
+findFreqTerms(docs2.tdm.tri[,2], lowfreq=30) 
+
 
 # ------------------ # find proportion of specific n-grams # ------------------- #
+library(plyr)
 count(docs.w[,"said"])
 
-count(docs2.tdm.bi.df["he said", 1]) #1790
+count(docs2.tdm.bi.df["he said", 1]) #1784
 count(docs2.tdm.bi.df["he say", 1]) #58
 count(docs2.tdm.bi.df["they said", 1]) #15
 count(docs2.tdm.bi.df["they say", 1]) #21
 
 count(docs2.tdm.bi.df["was said", 1]) #12
 count(docs2.tdm.bi.df["been said", 1]) #1
-count(docs2.tdm.bi.df["is said", 1]) #9
-count(docs2.tdm.bi.df["it said", 1]) #19
+count(docs2.tdm.bi.df["is said", 1]) #10
+count(docs2.tdm.bi.df["it said", 1]) #10
 count(docs2.tdm.bi.df["be said", 1]) #4
 count(docs2.tdm.bi.df["were said", 1]) #1
 count(docs2.tdm.bi.df["?", 1])
 
-# 490,282 bigrams for men + 160,870 bigrams for women
+# 483,230 bigrams for men + 144,159 bigrams for women
 # he said vs she said
-prop.test(x=c(1790,634),n=c(490282,160870))
+prop.test(x=c(1784,628),n=c(483230,144159))
 # he say vs she say
-prop.test(x=c(58,29),n=c(490282,160870))
+prop.test(x=c(58,28),n=c(483230,144159))
 # was/is/been/it/be said in men vs women
-prop.test(x=c((12+1+9+19+4+1),(1+1+1+3+1+1)),n=c(490282,160870))
+prop.test(x=c(38,6),n=c(483230,144159))
 # 
 
-count(docs2.tdm.bi.df["she said", 2]) #634
-count(docs2.tdm.bi.df["she say", 2]) #29
+count(docs2.tdm.bi.df["she said", 2]) #628
+count(docs2.tdm.bi.df["she say", 2]) #28
 count(docs2.tdm.bi.df["they said", 2]) #5
 count(docs2.tdm.bi.df["they say", 2]) #6
 count(docs2.tdm.bi.df["has said", 2]) #8
@@ -534,9 +584,64 @@ count(docs2.tdm.bi.df["were say", 2]) #1
 count(docs2.tdm.bi.df["been say", 2]) #1
 
 count(docs2.tdm.bi.df["was said", 2]) #1
-count(docs2.tdm.bi.df["been said", 2]) #1
-count(docs2.tdm.bi.df["is said", 2]) #1
+count(docs2.tdm.bi.df["been said", 2]) #0
+count(docs2.tdm.bi.df["is said", 2]) #0
 count(docs2.tdm.bi.df["it said", 2]) #3
 count(docs2.tdm.bi.df["be said", 2]) #1
 count(docs2.tdm.bi.df["were said", 2]) #1
 count(docs2.tdm.bi.df["?", 2])
+
+# ---------- # proportions of top 100 bigrams # ----------- #
+
+# passive : active
+prop.test(x=c(1048,254),n=c(12138,4269))
+
+# passive : total bigrams (using total number of bigrams as base)
+prop.test(x=c(1048,254),n=c(483230,144159))
+# passive : total bigrams (using sum of top 100 bigrams as base)
+prop.test(x=c(1048,254),n=c(43554,12367))
+
+# active : total bigrams (using total number of bigrams as base)
+prop.test(x=c(12138,4269),n=c(483230,144159))
+# active : total bigrams (using sum of top 100 bigrams as base)
+prop.test(x=c(12138,4269),n=c(43554,12367))
+
+
+# ---------- # hierarchical clustering # ----------- #
+
+docs.dtm.g <- DocumentTermMatrix(docs, control=list(wordLengths=c(3, 15)))
+docs.dtm.g.s <- removeSparseTerms(docs.dtm.g, 0.15)
+docs.dtm.g.s # 9,040 terms, 2 docs, 0% sparse
+
+docs.dtm.s <- removeSparseTerms(docs.dtm, 0.20) # This makes a matrix that is 20% empty space, maximum.
+docs.dtm.s # 9,040 terms, 2 docs, 0% sparse
+
+docs.dtm.s.df <- as.data.frame(t(docs.dtm.s))
+
+library(cluster)   
+d <- dist(t(docs.dtm.s), method="euclidian")   
+fit <- hclust(d=d, method="ward")   
+fit    
+
+plot(fit, hang=-1)
+
+
+# for bigrams
+docs.tdm.bi.s <- removeSparseTerms(docs.tdm.bi, 0.15) # This makes a matrix that is 20% empty space, maximum.
+docs.tdm.bi.s # 9,762 terms, 2 docs, 0% sparse
+
+docs.dtm.s.df <- as.data.frame(t(docs.dtm.s))
+
+library(cluster)   
+d <- dist(t(docs.dtm.s), method="euclidian")   
+fit <- hclust(d=d, method="ward")   
+fit    
+
+plot(fit, hang=-1)
+
+
+# ---------- # k means clustering # ------------ #
+
+library(fpc)   
+kfit <- kmeans(d, 2)   
+clusplot(as.matrix(d), kfit$cluster, color=T, shade=T, labels=2, lines=0)   

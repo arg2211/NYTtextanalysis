@@ -38,7 +38,7 @@ def split_ln(fname):
 
 
     workfile=re.sub('Copyright .*?\n','ENDOFILE',lnraw) #silly hack to find the end of the documents
-    workfile=workfile.replace('\xef\xbb\xbf\n','') #clean up crud at the beginning of the file
+    workfile=workfile.replace('\xef\xbb\xbf\n','') #clean up crud at the beginning of the file - encoding stuff
     #workfile=workfile.replace('\0xEF\0xBB\0xBF\n','') #clean up crud at the beginning of the file
     workfile=workfile.split('ENDOFILE') #split the file into a list of documents.
     workfile=[f for f in workfile if len(f.split('\n\n'))>2] #remove an blank rows
